@@ -240,6 +240,9 @@ public class Main {
         linkCommand.add("-o");
         linkCommand.add(outputFile.toString());
 
+        // verbose
+        linkCommand.add("-v");
+
         Path mainLL;
         if (config.getOs().equals("Windows")) {
           if (mainArguments) mainLL = Paths.get("MainWindows.ll");

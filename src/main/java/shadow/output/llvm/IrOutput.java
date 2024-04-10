@@ -489,6 +489,7 @@ public class IrOutput extends AbstractOutput {
     for (TACModule innerClass : module.getInnerClasses()) writeModuleDefinition(innerClass);
   }
 
+  // Windows only
   private void writeExceptions() throws ShadowException {
     writer.write("declare i32 @__exceptionFilter(i8*, i8*, " + type(Type.CLASS) + ")");
 
@@ -2602,7 +2603,7 @@ public class IrOutput extends AbstractOutput {
 
     // This comdat stuff is supposed to allow generic classes to be defined in multiple files and
     // merged at link time
-    writer.write("$" + withGenerics(generic, ".class") + " = comdat any");
+    //writer.write("$" + withGenerics(generic, ".class") + " = comdat any");
 
     Type genericAsObject;
 
@@ -2680,7 +2681,8 @@ public class IrOutput extends AbstractOutput {
 
     writer.write(
         classOf(generic)
-            + " = linkonce_odr unnamed_addr constant  %"
+            //+ " = linkonce_odr unnamed_addr constant  %"
+                + " = linkonce  constant  %"
             + raw(Type.GENERIC_CLASS)
             + " { "
             + type(Type.ULONG)
@@ -2742,7 +2744,8 @@ public class IrOutput extends AbstractOutput {
             + generic.toString(Type.MANGLE | Type.TYPE_PARAMETERS)
             + " to "
             + type(Type.ARRAY)
-            + ")}, comdat"); // tables
+                + ")}"); // tables
+            //+ ")}, comdat"); // tables
   }
 
   private void writeGenericClassSupportingMaterial(Type generic) throws ShadowException {
@@ -2783,13 +2786,16 @@ public class IrOutput extends AbstractOutput {
         else sb.append(typeText(Type.CLASS, classOf(_interface)));
       }
 
-      sb.append("]}, comdat");
+      //sb.append("]}, comdat");
+      sb.append("]}");
 
-      writer.write(
-          "$_interfaces" + generic.toString(Type.MANGLE | Type.TYPE_PARAMETERS) + " = comdat any");
+
+      //writer.write(
+          //"$_interfaces" + generic.toString(Type.MANGLE | Type.TYPE_PARAMETERS) + " = comdat any");
       writer.write(
           genericInterfaces(generic)
-              + " = linkonce_odr unnamed_addr constant {%ulong, "
+              //+ " = linkonce_odr unnamed_addr constant {%ulong, "
+                  + " = linkonce  constant {%ulong, "
               + type(Type.GENERIC_CLASS)
               + ", "
               + methodTableType(Type.ARRAY)
@@ -2912,17 +2918,20 @@ public class IrOutput extends AbstractOutput {
         }
     }
 
-    parameters.append("]}, comdat");
-    tables.append("]}, comdat");
+    //parameters.append("]}, comdat");
+    parameters.append("]}");
+    //tables.append("]}, comdat");
+    tables.append("]}");
 
     // This comdat stuff is supposed to allow generic classes to be defined in multiple files and
     // merged at link time
     String mangledGeneric = generic.toString(Type.MANGLE | Type.TYPE_PARAMETERS);
-    writer.write("$_parameters" + mangledGeneric + " = comdat any");
+    //writer.write("$_parameters" + mangledGeneric + " = comdat any");
     writer.write(
         "@_parameters"
             + mangledGeneric
-            + " = linkonce_odr unnamed_addr constant { %ulong, "
+            //+ " = linkonce_odr unnamed_addr constant { %ulong, "
+                + " = linkonce  constant { %ulong, "
             + type(Type.GENERIC_CLASS)
             + ", "
             + methodTableType(Type.ARRAY)
@@ -2933,11 +2942,12 @@ public class IrOutput extends AbstractOutput {
             + "] } "
             + parameters);
 
-    writer.write("$_tables" + mangledGeneric + " = comdat any");
+    //writer.write("$_tables" + mangledGeneric + " = comdat any");
     writer.write(
         "@_tables"
             + mangledGeneric
-            + " = linkonce_odr unnamed_addr constant { %ulong, "
+            //+ " = linkonce_odr unnamed_addr constant { %ulong, "
+                + " = linkonce  constant { %ulong, "
             + type(Type.GENERIC_CLASS)
             + ", "
             + methodTableType(Type.ARRAY)
