@@ -110,6 +110,7 @@ public class TypeChecker {
       // Even .meta files need this in order to:
       //   - Populate types on nodes within constant expressions
       //   - Collect used types for a node
+      //   - Record used generic class objects
       checker.check(node);
     }
 

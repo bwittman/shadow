@@ -1606,4 +1606,13 @@ public class TypeUpdater extends BaseChecker {
   public Void visitConditionalExpression(ShadowParser.ConditionalExpressionContext ctx) {
     /* no children */ return null;
   }
+
+
+  @Override
+  public Void visitGenericTypeList(ShadowParser.GenericTypeListContext ctx) {
+    if (!isMeta)
+      addError(ctx, Error.INVALID_STRUCTURE, "Generic type list is only permitted in .meta files");
+
+    return null;
+  }
 }

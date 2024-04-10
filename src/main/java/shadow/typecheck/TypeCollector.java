@@ -52,7 +52,7 @@ public class TypeCollector extends ScopedChecker {
   private final Map<Path, Context> fileTable = new HashMap<>();
   private final boolean typeCheckOnly;
 
-  // Holds all of the imports we know about.
+  // Holds all the imports we know about.
   private final Map<String, PathWithContext> importedTypes =
       new HashMap<>(); // Type name -> file path and import statement
   private final Set<Path> usedTypes = new HashSet<>(); // File paths

@@ -579,5 +579,20 @@ public class ClassType extends Type {
     for (Type _class : getInnerTypes().values()) _class.printMetaFile(out, indent);
 
     out.println(linePrefix + "}");
+
+    Set<Type> genericTypes = getInstantiatedGenerics();
+    if (genericTypes.size() > 0) {
+      out.println();
+      first = true;
+      for (Type type : genericTypes) {
+        if (first) {
+          first = false;
+          out.println(type.toString(PACKAGES | TYPE_PARAMETERS));
+        }
+        else
+          out.println(", " + type.toString(PACKAGES | TYPE_PARAMETERS));
+      }
+      out.println(";");
+    }
   }
 }

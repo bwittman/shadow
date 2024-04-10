@@ -3428,4 +3428,21 @@ public class StatementChecker extends ScopedChecker {
     // These only appear in .meta files and don't require statement-checking
     return null;
   }
+
+  @Override
+  public Void visitGenericTypeList(GenericTypeListContext ctx) {
+    visitChildren(ctx);
+
+    // Get type for top-level declaration
+    CompilationUnitContext compilationUnit = (CompilationUnitContext) ctx.getParent();
+    Context declaration = compilationUnit.classOrInterfaceDeclaration();
+    if (declaration == null)
+      declaration = compilationUnit.enumDeclaration();
+    Type type = declaration.getType();
+
+    for (ClassOrInterfaceTypeContext child : ctx.classOrInterfaceType())
+      type.addGenericType(child.getType());
+
+    return null;
+  }
 }

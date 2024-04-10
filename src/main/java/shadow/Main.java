@@ -210,7 +210,7 @@ public class Main {
     long startTime = System.currentTimeMillis();
 
     List<Path> cFiles = new ArrayList<>();
-    generateObjectFiles(cFiles);
+    Set<Type> instantiatedGenerics = generateObjectFiles(cFiles);
 
     if (isCompile) {
       // Compile and add the C source files to get linked
@@ -237,6 +237,7 @@ public class Main {
           outputFile = properExecutableName(outputName);
         }
 
+
         linkCommand.add("-o");
         linkCommand.add(outputFile.toString());
 
@@ -259,6 +260,7 @@ public class Main {
         Map<Path, Path> imports = config.getImport();
         Path parent = getBinaryPath(files.get(0), imports).getParent();
         Path temporaryMain = Files.createTempFile(parent, "main", ".o");
+
         StringBuilder builder = new StringBuilder();
         String line = main.readLine();
 
@@ -273,6 +275,19 @@ public class Main {
                 compileIrStream(
                         new ByteArrayInputStream(builder.toString().getBytes()), temporaryMain));
 
+        // Build generics file
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        IrOutput output = new IrOutput(stream, instantiatedGenerics);
+        output.writeGenericClasses();
+        output.close();
+
+        Path temporaryGenerics = Files.createTempFile(parent, "generics", ".o");
+
+        linkCommand.add(
+                compileIrStream(
+                        new ByteArrayInputStream(stream.toByteArray()), temporaryGenerics));
+
+
         logger.info("Linking object files...");
 
         // Usually clang
@@ -286,7 +301,8 @@ public class Main {
         } catch (InterruptedException | CompileException ignored) {
         } finally {
           link.destroy();
-          Files.delete(temporaryMain);
+          Files.deleteIfExists(temporaryMain);
+          Files.deleteIfExists(temporaryGenerics);
         }
       }
       logger.info("SUCCESS: Built in " + (System.currentTimeMillis() - startTime) + "ms");
@@ -474,8 +490,10 @@ public class Main {
    * (which has been updated more recently than the corresponding source file)
    * or building a new one
    */
-  private void generateObjectFiles(List<Path> cFiles)
+  private Set<Type> generateObjectFiles(List<Path> cFiles)
       throws IOException, ShadowException, ConfigurationException {
+
+    Set<Type> instantiatedGenerics = new HashSet<>();
 
     List<Path> system = config.getSystem();
     Path systemBinary = system.get(Configuration.BINARY);
@@ -535,6 +553,7 @@ public class Main {
     }
 
     try {
+
       for (Context node : typecheckerOutput.nodes) {
         // As an optimization, print .meta files for the .shadow files being checked
         // Attributes never generate .meta files because their original .shadow files are
@@ -584,7 +603,7 @@ public class Main {
             // Gets top level class
             TACModule module = optimizeTAC(new TACBuilder().build(node), reporter);
             if (reporter.getErrorList().isEmpty())
-              linkCommand.add(compileShadowFile(file, binaryPath, module));
+              linkCommand.add(compileShadowFile(file, binaryPath, module, instantiatedGenerics));
           }
 
           if (Files.exists(nativeFile))
@@ -600,6 +619,8 @@ public class Main {
       if (e.getCause() instanceof ShadowException) throw (ShadowException) e.getCause();
       else throw e;
     }
+
+    return instantiatedGenerics;
   }
 
   private Process getCompiler(String objectFile) throws IOException {
@@ -646,7 +667,7 @@ public class Main {
     }
   }
 
-  private String compileIrModule(Path shadowFile, Path binaryPath, TACModule module)
+  private String compileIrModule(Path shadowFile, Path binaryPath, TACModule module, Set<Type> instantiatedGenerics)
       throws IOException, CompileException {
     createDirectories(binaryPath);
     String binaryFile = binaryPath.toString();
@@ -657,7 +678,7 @@ public class Main {
 
     try {
       compile = getCompiler(binaryFile);
-      output = new IrOutput(new BufferedOutputStream(compile.getOutputStream()));
+      output = new IrOutput(new BufferedOutputStream(compile.getOutputStream()), instantiatedGenerics);
       output.build(module);
       output.close();
       if (compile.waitFor() != 0) throw new CompileException("FAILED TO COMPILE " + binaryFile);
@@ -712,7 +733,7 @@ public class Main {
         return compileIrStream(Files.newInputStream(irPath), binaryPath);
   }
 
-  private String compileShadowFile(Path shadowFile, Path binaryPath, TACModule module)
+  private String compileShadowFile(Path shadowFile, Path binaryPath, TACModule module, Set<Type> instantiatedGenerics)
       throws CompileException, IOException {
 
     if (humanReadable) {
@@ -720,7 +741,7 @@ public class Main {
         // Generate LLVM IR
         Path irFile = BaseChecker.changeExtension(shadowFile, ".ll");
         OutputStream out = Files.newOutputStream(irFile);
-        IrOutput output = new IrOutput(new BufferedOutputStream(out));
+        IrOutput output = new IrOutput(new BufferedOutputStream(out), instantiatedGenerics);
         output.build(module);
         output.close();
         out.close();
@@ -729,7 +750,7 @@ public class Main {
         logger.error("FAILED TO COMPILE " + shadowFile);
         throw new CompileException(e.getMessage());
       }
-    } else return compileIrModule(shadowFile, binaryPath, module);
+    } else return compileIrModule(shadowFile, binaryPath, module, instantiatedGenerics);
   }
 
   /*

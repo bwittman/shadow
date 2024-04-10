@@ -69,6 +69,8 @@ public class Context extends ParserRuleContext implements ModifiedType {
   private TACOperand operand;
   private Path binaryPath;
 
+
+
   /** For use when evaluation compile-time constants in {@link ASTInterpreter} */
   private ShadowValue interpretedValue;
 

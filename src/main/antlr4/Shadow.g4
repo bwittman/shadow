@@ -15,7 +15,7 @@
  * 
  */ 
 
-/** A Shadow 0.8 grammar for ANTLR v4. */
+/** A Shadow 0.8.5 grammar for ANTLR v4. */
 grammar Shadow;
 
 @header {
@@ -35,7 +35,7 @@ import shadow.typecheck.type.Type;
 options {contextSuperClass=shadow.parse.Context;}
 
 compilationUnit	
-    :   importDeclaration* modifiers (classOrInterfaceDeclaration | enumDeclaration ) EOF
+    :   importDeclaration* modifiers (classOrInterfaceDeclaration | enumDeclaration ) genericTypeList? EOF
     ;
     
 importDeclaration
@@ -701,6 +701,10 @@ catchStatement
 tryStatement
 	: 'try' block
 	;
+
+genericTypeList
+    : classOrInterfaceType (',' classOrInterfaceType)* ';'
+    ;
 
 // LEXER
 

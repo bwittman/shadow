@@ -1286,6 +1286,47 @@ public abstract class Type implements Comparable<Type> {
     return true;
   }
 
+  public Set<Type> getInstantiatedGenerics() {
+    Set<Type> genericClasses = new HashSet<>();
+    TreeSet<Type> startingClasses = new TreeSet<>(getUsedTypes());
+
+    // find all generics that need to be written
+    // start with all generic types used by the module
+    // then add their dependencies (and their dependencies, etc.)
+    while (!startingClasses.isEmpty()) {
+      Type type = startingClasses.first();
+      startingClasses.remove(type);
+
+      if ((type instanceof ArrayType && !((ArrayType) type).containsUnboundTypeParameters())
+              || (type.isFullyInstantiated()
+              && !type.getTypeWithoutTypeArguments().equals(Type.ARRAY)
+              && !type.getTypeWithoutTypeArguments().equals(Type.ARRAY_NULLABLE))) {
+        genericClasses.add(type);
+
+        SequenceType dependencies = null;
+
+        if (type instanceof ArrayType)
+          dependencies = ((ArrayType) type).convertToGeneric().getDependencyList();
+        else if (type instanceof ClassType) dependencies = ((ClassType) type).getDependencyList();
+
+        if (dependencies != null)
+          for (ModifiedType modifiedType : dependencies) {
+            Type dependency = modifiedType.getType();
+            // arrays are in their "generic" form and should be turned back
+            if (dependency.getTypeWithoutTypeArguments().equals(Type.ARRAY))
+              dependency = new ArrayType(dependency.getTypeParameters().getType(0));
+            else if (dependency.getTypeWithoutTypeArguments().equals(Type.ARRAY_NULLABLE))
+              dependency = new ArrayType(dependency.getTypeParameters().getType(0), true);
+
+            if (genericClasses.add(dependency))
+              startingClasses.add(dependency);
+          }
+      }
+    }
+
+    return genericClasses;
+  }
+
   public void addUsedType(Type type) {
     if (type == null || type instanceof UninstantiatedType) return;
 

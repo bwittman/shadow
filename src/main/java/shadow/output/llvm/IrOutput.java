@@ -23,17 +23,21 @@ public class IrOutput extends AbstractOutput {
   private int classCounter = 0;
   private final HashSet<MethodSignature> usedSignatures = new HashSet<>();
   private final Set<ExceptionType> exceptions = new TreeSet<>();
+  private final Set<Type> instantiatedGenerics;
 
   private TACModule module;
   private boolean skipMethod = false;
 
   @SuppressWarnings("unused")
-  public IrOutput(Path file) throws ShadowException {
+  public IrOutput(Path file, Set<Type> instantiatedGenerics) throws ShadowException {
     super(file);
+    this.instantiatedGenerics = instantiatedGenerics;
   }
 
-  public IrOutput(OutputStream stream) {
+  public IrOutput(OutputStream stream, Set<Type> instantiatedGenerics) {
     super(stream);
+    this.instantiatedGenerics = instantiatedGenerics;
+
   }
 
   private String temp(int offset) {
@@ -512,46 +516,18 @@ public class IrOutput extends AbstractOutput {
     }
   }
 
-  private void writeGenericClasses(Set<Type> definedGenerics) throws ShadowException {
-    Set<Type> genericClasses = new HashSet<>();
-    Type moduleType = module.getType();
-    TreeSet<Type> startingClasses = new TreeSet<>(moduleType.getUsedTypes());
+  public void writeGenericClasses() throws ShadowException {
+    // TODO: Add appropriate front-matter
 
-    // find all generics that need to be written
-    // start with all generic types used by the module
-    // then add their dependencies (and their dependencies, etc.)
-    while (!startingClasses.isEmpty()) {
-      Type type = startingClasses.first();
-      startingClasses.remove(type);
-
-      if ((type instanceof ArrayType && !((ArrayType) type).containsUnboundTypeParameters())
-          || (type.isFullyInstantiated()
-              && !type.getTypeWithoutTypeArguments().equals(Type.ARRAY)
-              && !type.getTypeWithoutTypeArguments().equals(Type.ARRAY_NULLABLE))) {
-        genericClasses.add(type);
-
-        SequenceType dependencies = null;
-
-        if (type instanceof ArrayType)
-          dependencies = ((ArrayType) type).convertToGeneric().getDependencyList();
-        else if (type instanceof ClassType) dependencies = ((ClassType) type).getDependencyList();
-
-        if (dependencies != null)
-          for (ModifiedType modifiedType : dependencies) {
-            Type dependency = modifiedType.getType();
-            // arrays are in their "generic" form and should be turned back
-            if (dependency.getTypeWithoutTypeArguments().equals(Type.ARRAY))
-              dependency = new ArrayType(dependency.getTypeParameters().getType(0));
-            else if (dependency.getTypeWithoutTypeArguments().equals(Type.ARRAY_NULLABLE))
-              dependency = new ArrayType(dependency.getTypeParameters().getType(0), true);
-
-            if (!genericClasses.contains(dependency)) {
-              genericClasses.add(dependency);
-              startingClasses.add(dependency);
-            }
-          }
-      }
+    for (Type type : instantiatedGenerics) {
+      writeGenericClassSupportingMaterial(type);
+      writeGenericClass(type);
     }
+  }
+
+  private void writeGenericClasses(Set<Type> definedGenerics) throws ShadowException {
+
+    Set<Type> genericClasses = module.getType().getInstantiatedGenerics();
 
     writeUnparameterizedGeneric(Type.ARRAY, definedGenerics);
     writeUnparameterizedGeneric(Type.ARRAY_NULLABLE, definedGenerics);
@@ -560,8 +536,10 @@ public class IrOutput extends AbstractOutput {
       // write type and method table declarations (even for current types!)
       if (!(type instanceof ArrayType)) writeUnparameterizedGeneric(type, definedGenerics);
 
-      writeGenericClassSupportingMaterial(type); // junk that all generic classes need
-      writeGenericClass(type);
+      instantiatedGenerics.add(type);
+      declareGenericClass(type);
+      //writeGenericClassSupportingMaterial(type); // junk that all generic classes need
+      //writeGenericClass(type);
     }
 
     writer.write();
@@ -2599,7 +2577,11 @@ public class IrOutput extends AbstractOutput {
     return sb.append(' ').append(name).toString();
   }
 
-  private void writeGenericClass(Type generic) throws ShadowException {
+  private void declareGenericClass(Type generic) throws ShadowException {
+    writer.write(classOf(generic) + " = external global " + type(Type.GENERIC_CLASS));
+  }
+
+  public void writeGenericClass(Type generic) throws ShadowException {
 
     // This comdat stuff is supposed to allow generic classes to be defined in multiple files and
     // merged at link time
@@ -2961,5 +2943,9 @@ public class IrOutput extends AbstractOutput {
 
   public void close() throws IOException {
     writer.close();
+  }
+
+  public Set<Type> getInstantiatedGenerics() {
+    return instantiatedGenerics;
   }
 }
