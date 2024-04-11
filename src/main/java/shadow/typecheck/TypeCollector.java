@@ -797,6 +797,7 @@ public class TypeCollector extends ScopedChecker {
         case "long" -> Type.LONG = classType;
         case "Method" -> Type.METHOD = classType;
         case "MethodTable" -> Type.METHOD_TABLE = classType;
+        case "MutableString" -> Type.MUTABLE_STRING = classType;
         case "Object" -> Type.OBJECT = classType;
         case "short" -> Type.SHORT = classType;
         case "String" -> Type.STRING = classType;

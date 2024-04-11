@@ -188,60 +188,11 @@ public class TypeUpdater extends BaseChecker {
        * The following types must be added because they can appear in
        * generated code without appearing inside the Shadow source at all.
        */
-
-      // Address map for deep copies
-      type.addUsedType(Type.ADDRESS_MAP);
-
-      // Class management
-      type.addUsedType(Type.CLASS);
-      type.addUsedType(Type.GENERIC_CLASS);
-
-      // Array wrapper classes
-      type.addUsedType(Type.ARRAY);
-      type.addUsedType(Type.ARRAY_NULLABLE);
-
-      // Used for method references
-      type.addUsedType(Type.METHOD);
-
-      // Iterators for foreach loops
-      type.addUsedType(Type.ITERATOR);
-      type.addUsedType(Type.ITERATOR_NULLABLE);
-
-      // Exceptions
-      type.addUsedType(Type.EXCEPTION);
-      type.addUsedType(Type.CAST_EXCEPTION);
-      type.addUsedType(Type.INDEX_OUT_OF_BOUNDS_EXCEPTION);
-      type.addUsedType(Type.INTERFACE_CREATE_EXCEPTION);
-      type.addUsedType(Type.UNEXPECTED_NULL_EXCEPTION);
-
-      // String
-      type.addUsedType(Type.STRING);
-
-      // byte array
-      type.addUsedType(new ArrayType(Type.UBYTE));
-
-      // method table array
-      type.addUsedType(new ArrayType(Type.METHOD_TABLE));
-
-      type.addUsedType(new ArrayType(Type.CLASS));
+    for(Type coreType : Type.getCoreTypes())
+        type.addUsedType(coreType);
 
       // Adding the self adds parents and interfaces and methods
       type.addUsedType(type);
-
-      // Add all primitive types (since their Object versions might be
-      // used in casts)
-      type.addUsedType(Type.BOOLEAN);
-      type.addUsedType(Type.BYTE);
-      type.addUsedType(Type.CODE);
-      type.addUsedType(Type.DOUBLE);
-      type.addUsedType(Type.FLOAT);
-      type.addUsedType(Type.INT);
-      type.addUsedType(Type.LONG);
-      type.addUsedType(Type.SHORT);
-      type.addUsedType(Type.UBYTE);
-      type.addUsedType(Type.UINT);
-      type.addUsedType(Type.ULONG);
-      type.addUsedType(Type.USHORT);
     }
   }
 

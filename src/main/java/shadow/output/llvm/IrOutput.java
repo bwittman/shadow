@@ -161,16 +161,20 @@ public class IrOutput extends AbstractOutput {
     }
   }
 
-  private void writeTypeDefinition(Type type) throws ShadowException {
+  private void writeTypeDefinition(Type type, boolean includeMethodTable) throws ShadowException {
     StringBuilder sb = new StringBuilder();
 
     if (type instanceof InterfaceType) {
-      sb.append(methodTableType(type, false)).append(" = type { ");
-      writer.write(sb.append(methodList(type.orderAllMethods(), false)).append(" }").toString());
-    } else if (type instanceof ClassType) {
-      if (type.isUninstantiated()) {
+      if (includeMethodTable) {
         sb.append(methodTableType(type, false)).append(" = type { ");
         writer.write(sb.append(methodList(type.orderAllMethods(), false)).append(" }").toString());
+      }
+    } else if (type instanceof ClassType) {
+      if (type.isUninstantiated()) {
+        if (includeMethodTable) {
+          sb.append(methodTableType(type, false)).append(" = type { ");
+          writer.write(sb.append(methodList(type.orderAllMethods(), false)).append(" }").toString());
+        }
 
         sb.setLength(0);
 
@@ -185,7 +189,7 @@ public class IrOutput extends AbstractOutput {
         sb.append(methodTableType(type));
 
         if (type.isPrimitive()) // put wrapped value in for primitives
-        sb.append(", ").append(type(type));
+          sb.append(", ").append(type(type));
         else {
           for (Entry<String, ? extends ModifiedType> field : ((ClassType) type).orderAllFields())
             sb.append(", ").append(type(field.getValue()));
@@ -193,6 +197,10 @@ public class IrOutput extends AbstractOutput {
         writer.write(sb.append(" }").toString());
       }
     }
+  }
+
+  private void writeTypeDefinition(Type type) throws ShadowException {
+    writeTypeDefinition(type, true);
   }
 
   private void writeModuleDefinition(TACModule module) throws ShadowException {
@@ -516,9 +524,54 @@ public class IrOutput extends AbstractOutput {
     }
   }
 
-  public void writeGenericClasses() throws ShadowException {
-    // TODO: Add appropriate front-matter
+  private static void addType(Set<Type> types, Type type) {
+    if(types.add(type)) {
+      for (Type inner : type.getInnerTypes().values())
+        addType(types, inner);
+    }
+  }
 
+  public void writeGenericClasses() throws ShadowException {
+    // Each time we write an unparameterized generic, it goes in the set
+    // That way, we don't duplicate
+    Set<Type> unparameterizedGenerics = new HashSet<>();
+
+    writePrimitiveTypes();
+
+    writer.write("; Array material");
+
+    // We pull out ARRAY and ARRAY_NULLABLE and do fully
+    writeUnparameterizedGeneric(Type.ARRAY, unparameterizedGenerics);
+    writeUnparameterizedGeneric(Type.ARRAY_NULLABLE, unparameterizedGenerics);
+
+    writer.write();
+    writer.write("; Other core types");
+    List<Type> coreTypes = Type.getCoreTypes();
+    Set<Type> allTypes = new HashSet<>();
+    // Add all types, including inner types
+    for (Type type : coreTypes)
+      addType(allTypes, type);
+
+    for(Type type : allTypes) {
+      // Don't duplicate the arrays
+      if (type != Type.ARRAY && type != Type.ARRAY_NULLABLE) {
+        writeTypeDefinition(type, !(type instanceof ArrayType));
+        unparameterizedGenerics.add(type.getTypeWithoutTypeArguments());
+      }
+    }
+
+    writer.write();
+    writer.write("; Unparameterized generics");
+    for (Type type : instantiatedGenerics) {
+      if (!(type instanceof ArrayType))
+        writeUnparameterizedGeneric(type, unparameterizedGenerics);
+    }
+
+    // This is the point of this method.
+    // All the previous content is supporting material so that none of these
+    // reference a type that doesn't exist.
+    writer.write();
+    writer.write("; Fully parameterized generics");
     for (Type type : instantiatedGenerics) {
       writeGenericClassSupportingMaterial(type);
       writeGenericClass(type);
@@ -545,14 +598,15 @@ public class IrOutput extends AbstractOutput {
     writer.write();
   }
 
-  private void writeUnparameterizedGeneric(Type type, Set<Type> definedGenerics)
+  private void writeUnparameterizedGeneric(Type type, Set<Type> unparameterizedGenerics)
       throws ShadowException {
     Type unparameterizedType = type.getTypeWithoutTypeArguments();
 
-    if (definedGenerics.add(unparameterizedType)) {
+    if (unparameterizedGenerics.add(unparameterizedType)) {
       writeTypeDefinition(unparameterizedType);
 
-      if (!module.getType().encloses(unparameterizedType)) {
+      // module can be null for file that declares all parameterized generics
+      if (module == null || !module.getType().encloses(unparameterizedType)) {
         if (unparameterizedType instanceof ClassType) {
           writer.write(
               interfaceData(unparameterizedType)
@@ -2581,7 +2635,7 @@ public class IrOutput extends AbstractOutput {
     writer.write(classOf(generic) + " = external global " + type(Type.GENERIC_CLASS));
   }
 
-  public void writeGenericClass(Type generic) throws ShadowException {
+  private void writeGenericClass(Type generic) throws ShadowException {
 
     // This comdat stuff is supposed to allow generic classes to be defined in multiple files and
     // merged at link time

@@ -281,6 +281,12 @@ public class Main {
         output.writeGenericClasses();
         output.close();
 
+        // Debugging stuff
+        Path temporaryGenericsLL = parent.resolve("genericsInsanity.ll");
+        PrintWriter writer = new PrintWriter(temporaryGenericsLL.toFile());
+        writer.print(stream);
+        writer.close();
+
         Path temporaryGenerics = Files.createTempFile(parent, "generics", ".o");
 
         linkCommand.add(
@@ -301,8 +307,8 @@ public class Main {
         } catch (InterruptedException | CompileException ignored) {
         } finally {
           link.destroy();
-          Files.deleteIfExists(temporaryMain);
-          Files.deleteIfExists(temporaryGenerics);
+          Files.delete(temporaryMain);
+          Files.delete(temporaryGenerics);
         }
       }
       logger.info("SUCCESS: Built in " + (System.currentTimeMillis() - startTime) + "ms");

@@ -91,6 +91,7 @@ public abstract class Type implements Comparable<Type> {
   public static ClassType USHORT = null;
 
   public static ClassType STRING = null;
+  public static ClassType MUTABLE_STRING = null;
   public static ClassType ADDRESS_MAP = null; // used for copying
 
   public static ClassType POINTER = null;
@@ -142,6 +143,65 @@ public abstract class Type implements Comparable<Type> {
   public static final int MANGLE = 1 << bits++;
   public static final int MANGLE_IMPORT_METHOD = 1 << bits++;
   public static final int NO_NULLABLE = 1 << bits++;
+
+    /*
+     * The following types must be added because they can appear in
+     * generated code without appearing inside the Shadow source at all.
+     *
+     * DANGER: Do not call this method before type collection has been done;
+     * otherwise, some of these values will be null.
+     */
+  public static List<Type> getCoreTypes() {
+      if (coreTypes == null) {
+          coreTypes = Collections.unmodifiableList(Arrays.asList(
+          Type.OBJECT,
+          // Address map for deep copies
+          Type.ADDRESS_MAP,
+          // Class management
+          Type.CLASS,
+          Type.GENERIC_CLASS,
+          // Array wrapper classes
+          Type.ARRAY,
+          Type.ARRAY_NULLABLE,
+          // Used for method references
+          Type.METHOD,
+          // Iterators for foreach loops
+          Type.ITERATOR,
+          Type.ITERATOR_NULLABLE,
+          // Exceptions
+          Type.EXCEPTION,
+          Type.CAST_EXCEPTION,
+          Type.INDEX_OUT_OF_BOUNDS_EXCEPTION,
+          Type.INTERFACE_CREATE_EXCEPTION,
+          Type.UNEXPECTED_NULL_EXCEPTION,
+          // String
+          Type.STRING,
+          Type.MUTABLE_STRING,
+          // ubyte array
+          new ArrayType(Type.UBYTE),
+          // method table array
+          new ArrayType(Type.METHOD_TABLE),
+          new ArrayType(Type.CLASS),
+          // Add all primitive types (since their Object versions might be
+          // used in casts)
+          Type.BOOLEAN,
+          Type.BYTE,
+          Type.CODE,
+          Type.DOUBLE,
+          Type.FLOAT,
+          Type.INT,
+          Type.LONG,
+          Type.SHORT,
+          Type.UBYTE,
+          Type.UINT,
+          Type.ULONG,
+          Type.USHORT
+        ));
+      }
+      return coreTypes;
+  }
+
+  private static List<Type> coreTypes = null;
 
   private static class TypeArgumentCache {
     public ModifiedType argument;
@@ -317,6 +377,7 @@ public abstract class Type implements Comparable<Type> {
     ULONG = null;
     USHORT = null;
     STRING = null;
+    MUTABLE_STRING = null;
     ADDRESS_MAP = null;
     CAN_COMPARE = null;
     CAN_EQUAL = null;
