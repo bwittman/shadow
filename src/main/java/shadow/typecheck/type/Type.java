@@ -47,7 +47,6 @@ public abstract class Type implements Comparable<Type> {
   private final Set<Type> mentionedTypes = new HashSet<>();
   private final Set<Type> partiallyInstantiatedClasses = new TreeSet<>();
   private final List<Type> typeParameterDependencies = new ArrayList<>();
-
   private final TypeArgumentCache instantiatedTypes = new TypeArgumentCache();
   private final Map<String, ImportInformation> importedItems = new HashMap<>();
 
@@ -58,8 +57,8 @@ public abstract class Type implements Comparable<Type> {
    */
 
   public static ClassType OBJECT = null;
-  public static ClassType CLASS = null; // meta class for holding normal :class variables
-  public static ClassType GENERIC_CLASS = null; // meta class for holding generic :class variables
+  public static ClassType CLASS = null; // metaclass for holding normal :class variables
+  public static ClassType GENERIC_CLASS = null; // metaclass for holding generic :class variables
   public static ClassType ARRAY = null; // object representation of all array types
   public static ClassType ARRAY_NULLABLE = null; // object representation of nullable array types
 
@@ -93,7 +92,6 @@ public abstract class Type implements Comparable<Type> {
   public static ClassType STRING = null;
   public static ClassType MUTABLE_STRING = null;
   public static ClassType ADDRESS_MAP = null; // used for copying
-
   public static ClassType POINTER = null;
   public static ClassType THREAD = null;
   public static SingletonType THREAD_CURRENT = null;
@@ -182,8 +180,8 @@ public abstract class Type implements Comparable<Type> {
           // method table array
           new ArrayType(Type.METHOD_TABLE),
           new ArrayType(Type.CLASS),
-          // Add all primitive types (since their Object versions might be
-          // used in casts)
+          Type.THREAD,
+          // Add all primitive types (since their Object versions might be used in casts)
           Type.BOOLEAN,
           Type.BYTE,
           Type.CODE,

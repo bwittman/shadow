@@ -4,6 +4,7 @@ import shadow.Configuration;
 import shadow.ShadowException;
 import shadow.interpreter.*;
 import shadow.output.AbstractOutput;
+import shadow.parse.ShadowParser;
 import shadow.tac.*;
 import shadow.tac.TACMethod.TACFinallyFunction;
 import shadow.tac.nodes.*;
@@ -524,48 +525,38 @@ public class IrOutput extends AbstractOutput {
     }
   }
 
-  private static void addType(Set<Type> types, Type type) {
-    if(types.add(type)) {
-      for (Type inner : type.getInnerTypes().values())
-        addType(types, inner);
-    }
-  }
 
   public void writeGenericClasses() throws ShadowException {
-    // Each time we write an unparameterized generic, it goes in the set
-    // That way, we don't duplicate
-    Set<Type> unparameterizedGenerics = new HashSet<>();
-
     writePrimitiveTypes();
+    Set<Type> referencedTypes = new HashSet<>();
+    Set<Type> usedTypes = new HashSet<>();
 
-    writer.write("; Array material");
-
-    // We pull out ARRAY and ARRAY_NULLABLE and do fully
-    writeUnparameterizedGeneric(Type.ARRAY, unparameterizedGenerics);
-    writeUnparameterizedGeneric(Type.ARRAY_NULLABLE, unparameterizedGenerics);
-
-    writer.write();
-    writer.write("; Other core types");
-    List<Type> coreTypes = Type.getCoreTypes();
-    Set<Type> allTypes = new HashSet<>();
-    // Add all types, including inner types
-    for (Type type : coreTypes)
-      addType(allTypes, type);
-
-    for(Type type : allTypes) {
-      // Don't duplicate the arrays
-      if (type != Type.ARRAY && type != Type.ARRAY_NULLABLE) {
-        writeTypeDefinition(type, !(type instanceof ArrayType));
-        unparameterizedGenerics.add(type.getTypeWithoutTypeArguments());
-      }
-    }
-
-    writer.write();
-    writer.write("; Unparameterized generics");
     for (Type type : instantiatedGenerics) {
-      if (!(type instanceof ArrayType))
-        writeUnparameterizedGeneric(type, unparameterizedGenerics);
+      Type uninstantiatedType = type.getTypeWithoutTypeArguments();
+      usedTypes.add(uninstantiatedType);
+      for (ShadowParser.VariableDeclaratorContext context : uninstantiatedType.getFields().values())
+        referencedTypes.add(context.getType());
+
+      if (type instanceof ArrayType arrayType)
+        type = arrayType.convertToGeneric();
+      for (ModifiedType parameter : type.getTypeParameters())
+        referencedTypes.add(parameter.getType().getTypeWithoutTypeArguments());
     }
+
+    // Always needed
+    Type[] alwaysNeeded = {Type.ARRAY, Type.ARRAY_NULLABLE, Type.GENERIC_CLASS, Type.ADDRESS_MAP};
+    usedTypes.addAll(Arrays.asList(alwaysNeeded));
+
+    for (Type type : usedTypes) {
+      writeTypeDefinition(type);
+      referencedTypes.remove(type);
+    }
+
+    writer.write();
+    writer.write("; Type dependencies");
+
+    for(Type type : referencedTypes)
+        writeTypeDeclaration(type);
 
     // This is the point of this method.
     // All the previous content is supporting material so that none of these
