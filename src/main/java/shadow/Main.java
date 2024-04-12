@@ -278,7 +278,7 @@ public class Main {
         // Build generics file
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         IrOutput output = new IrOutput(stream, instantiatedGenerics);
-        output.writeGenericClasses();
+        output.writeGenericClassFile();
         output.close();
 
         // Debugging stuff

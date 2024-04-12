@@ -199,7 +199,47 @@ public abstract class Type implements Comparable<Type> {
       return coreTypes;
   }
 
+  /*
+   * The following types must be added because they can appear in
+   * generated code without appearing inside the Shadow source at all.
+   *
+   * DANGER: Do not call this method before type collection has been done;
+   * otherwise, some of these values will be null.
+   */
+  public static List<Type> getGenericSupportingTypes() {
+    if (genericSupportingTypes == null) {
+      genericSupportingTypes = Collections.unmodifiableList(Arrays.asList(
+              Type.OBJECT,
+              // Address map for deep copies
+              Type.ADDRESS_MAP,
+              // Class management
+              Type.CLASS,
+              Type.GENERIC_CLASS,
+              // Array wrapper classes
+              Type.ARRAY,
+              Type.ARRAY_NULLABLE,
+              // String
+              Type.STRING,
+              // Add all primitive types (since their Object versions might be used in casts)
+              Type.BOOLEAN,
+              Type.BYTE,
+              Type.CODE,
+              Type.DOUBLE,
+              Type.FLOAT,
+              Type.INT,
+              Type.LONG,
+              Type.SHORT,
+              Type.UBYTE,
+              Type.UINT,
+              Type.ULONG,
+              Type.USHORT
+      ));
+    }
+    return genericSupportingTypes;
+  }
+
   private static List<Type> coreTypes = null;
+  private static List<Type> genericSupportingTypes = null;
 
   private static class TypeArgumentCache {
     public ModifiedType argument;
@@ -788,32 +828,15 @@ public abstract class Type implements Comparable<Type> {
     String operator = assignmentType.getOperator();
 
     switch (assignmentType) {
-      case PLUS:
-        interfaceType = Type.CAN_ADD;
-        break;
-      case MINUS:
-        interfaceType = Type.CAN_SUBTRACT;
-        break;
-      case STAR:
-        interfaceType = Type.CAN_MULTIPLY;
-        break;
-      case SLASH:
-        interfaceType = Type.CAN_DIVIDE;
-        break;
-      case MOD:
-        interfaceType = Type.CAN_MODULUS;
-        break;
-      case AND:
-      case OR:
-      case XOR:
-      case LEFT_SHIFT:
-      case RIGHT_SHIFT:
-      case LEFT_ROTATE:
-      case RIGHT_ROTATE:
-        interfaceType = Type.INTEGER;
-        break;
-      default:
+      case PLUS -> interfaceType = Type.CAN_ADD;
+      case MINUS -> interfaceType = Type.CAN_SUBTRACT;
+      case STAR -> interfaceType = Type.CAN_MULTIPLY;
+      case SLASH -> interfaceType = Type.CAN_DIVIDE;
+      case MOD -> interfaceType = Type.CAN_MODULUS;
+      case AND, OR, XOR, LEFT_SHIFT, RIGHT_SHIFT, LEFT_ROTATE, RIGHT_ROTATE -> interfaceType = Type.INTEGER;
+      default -> {
         return false;
+      }
     }
 
     if (hasUninstantiatedInterface(interfaceType)) {
