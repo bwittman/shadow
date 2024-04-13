@@ -540,6 +540,9 @@ public class IrOutput extends AbstractOutput {
     Set<Type> usedTypes = new HashSet<>();
     Set<Type> unparameterizedGenerics = new HashSet<>();
 
+    // array of ubytes shows up inside of Strings and other places
+    instantiatedGenerics.add(new ArrayType(Type.UBYTE));
+
     // Generic classes will reference the fields of the type in order to determine size
     // Consequently, all those classes must be mentioned, even if only as opaque types
     for (Type type : instantiatedGenerics) {
@@ -571,6 +574,7 @@ public class IrOutput extends AbstractOutput {
 
     // Always needed
     usedTypes.addAll(supportingTypes);
+
 
     // Some of the types above aren't generics at all, but that's fine
     // Writing an unparameterized generic removes all type parameters
@@ -2737,7 +2741,7 @@ public class IrOutput extends AbstractOutput {
     }
 
     String name;
-    // As an optimization for arrays, store no name, since the full name can be retrieved base class
+    // As an optimization for arrays, store no name, since the full name can be retrieved from base class
     if (generic instanceof ArrayType) {
       name = ((ArrayType) generic).isNullable() ? "nullable " : "";
       flags |= ARRAY;
@@ -2745,8 +2749,8 @@ public class IrOutput extends AbstractOutput {
 
     writer.write(
         classOf(generic)
-            //+ " = linkonce_odr unnamed_addr constant  %"
-                + " = linkonce  constant  %"
+            + " = unnamed_addr constant %"
+            //    + " = linkonce  constant  %"
             + raw(Type.GENERIC_CLASS)
             + " { "
             + type(Type.ULONG)
