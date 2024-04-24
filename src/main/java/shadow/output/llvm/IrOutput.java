@@ -533,6 +533,13 @@ public class IrOutput extends AbstractOutput {
     }
   }
 
+  private static boolean addReferencedType(Set<Type> referencedTypes, Type type) {
+    // Ignore if parameterized (because we only need unparameterized types)
+    // Ignore if an array for the same reasons (arrays are essentially generic types)
+    if (!type.isParameterized() && !(type instanceof ArrayType))
+      return referencedTypes.add(type);
+    return false;
+  }
 
   public void writeGenericClassFile() throws ShadowException {
     writePrimitiveTypes();
@@ -548,23 +555,23 @@ public class IrOutput extends AbstractOutput {
     for (Type type : instantiatedGenerics) {
       Type uninstantiatedType = type.getTypeWithoutTypeArguments();
       if (usedTypes.add(uninstantiatedType) ) {
-        for (ShadowParser.VariableDeclaratorContext context : uninstantiatedType.getFields().values())
-          // Ignore if parameterized (because we only need unparameterized types)
-          // Ignore if an array for the same reasons (arrays are essentially generic types)
-          if (!context.getType().isParameterized() && !(context.getType() instanceof ArrayType))
-            referencedTypes.add(context.getType());
+        if (uninstantiatedType instanceof ClassType classType)
+        for (ModifiedType modifiedType : classType.getAllFields())
+          addReferencedType(referencedTypes, modifiedType.getType());
+
+        for (MethodSignature signature : uninstantiatedType.orderAllMethods()) {
+          for(ModifiedType modifiedType : signature.getParameterTypes())
+            addReferencedType(referencedTypes, modifiedType.getType());
+          for(ModifiedType modifiedType : signature.getReturnTypes())
+            addReferencedType(referencedTypes, modifiedType.getType());
+        }
       }
 
       if (type instanceof ArrayType arrayType)
         type = arrayType.convertToGeneric();
 
-      for (ModifiedType parameter : type.getTypeParameters()) {
-        Type parameterType = parameter.getType();
-        // Ignore if parameterized (because we only need unparameterized types)
-        // Ignore if an array for the same reasons (arrays are essentially generic types)
-        if (!parameterType.isParameterized() && !(parameterType instanceof ArrayType))
-          referencedTypes.add(parameterType);
-      }
+      for (ModifiedType parameter : type.getTypeParameters())
+          addReferencedType(referencedTypes, parameter.getType());
     }
 
     List<Type> supportingTypes = Type.getGenericSupportingTypes();

@@ -1167,12 +1167,6 @@ public abstract class Type implements Comparable<Type> {
     return methodTable;
   }
 
-  public Set<MethodSignature> getAllMethods() {
-    return methodTable.values().stream()
-        .flatMap(Collection::stream)
-        .collect(Collectors.toUnmodifiableSet());
-  }
-
   public List<MethodSignature> getMethodOverloads(String methodName) {
     List<MethodSignature> signatures = methodTable.get(methodName);
     if (signatures == null) return new ArrayList<>();

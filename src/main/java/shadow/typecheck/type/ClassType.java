@@ -173,6 +173,14 @@ public class ClassType extends Type {
         : index;
   }
 
+
+  public Set<ModifiedType> getAllFields() {
+    return orderAllFields().stream().
+            map(Map.Entry::getValue).
+            collect(Collectors.toUnmodifiableSet());
+  }
+
+
   public List<Entry<String, ? extends ModifiedType>> orderAllFields() {
     List<Entry<String, ? extends ModifiedType>> fieldList = new ArrayList<>();
 
