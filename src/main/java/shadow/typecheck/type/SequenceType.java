@@ -138,8 +138,12 @@ public class SequenceType extends Type implements Iterable<ModifiedType>, List<M
         if (type.isPrimitive() && !modifiers.isNullable()) builder.append(type.getTypeName());
         else builder.append(type.toString(options));
       } else if (type != null) {
-        builder.append(modifiers.toString());
-        builder.append(type.toString(options | NO_NULLABLE));
+        // Do this?
+      //  if (type.isPrimitive() && !modifiers.isNullable()) builder.append(type.getTypeName());
+       // else {
+          builder.append(modifiers.toString());
+          builder.append(type.toString(options | NO_NULLABLE));
+        //}
       }
     }
 

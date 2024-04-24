@@ -3440,7 +3440,7 @@ public class StatementChecker extends ScopedChecker {
       declaration = compilationUnit.enumDeclaration();
     Type type = declaration.getType();
 
-    for (ClassOrInterfaceTypeContext child : ctx.classOrInterfaceType())
+    for (ReferenceTypeContext child : ctx.referenceType())
       type.addUsedType(child.getType());
 
     return null;

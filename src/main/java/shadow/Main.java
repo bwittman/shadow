@@ -242,7 +242,7 @@ public class Main {
         linkCommand.add(outputFile.toString());
 
         // verbose
-        linkCommand.add("-v");
+        //linkCommand.add("-v");
 
         Path mainLL;
         if (config.getOs().equals("Windows")) {

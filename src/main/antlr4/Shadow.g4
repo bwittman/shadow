@@ -703,7 +703,7 @@ tryStatement
 	;
 
 genericTypeList
-    : classOrInterfaceType (',' classOrInterfaceType)* ';'
+    : referenceType (',' referenceType)* ';'
     ;
 
 // LEXER
