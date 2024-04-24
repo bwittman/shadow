@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import shadow.Configuration;
 import shadow.Main;
+import shadow.typecheck.type.Type;
 
 import java.util.ArrayList;
 
@@ -22,6 +23,7 @@ public class InterpreterTests {
     args.add("--typecheck");
     args.add("-c");
     args.add("tests.json");
+    Type.clearTypes();
   }
 
   @Test

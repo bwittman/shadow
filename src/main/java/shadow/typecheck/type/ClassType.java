@@ -590,6 +590,10 @@ public class ClassType extends Type {
             first = false;
           else
             out.println(",");
+
+          if(type instanceof ArrayType arrayType)
+            type = arrayType.convertToGeneric();
+
           out.print(type.toString(PACKAGES | TYPE_PARAMETERS));
         }
         out.println(";");

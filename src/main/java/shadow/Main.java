@@ -559,13 +559,7 @@ public class Main {
     }
 
     try {
-
       for (Context node : typecheckerOutput.nodes) {
-        // As an optimization, print .meta files for the .shadow files being checked
-        // Attributes never generate .meta files because their original .shadow files are
-        // interpreted
-        if (!node.isFromMetaFile()) TypeChecker.printMetaFile(node);
-
         Path file = node.getSourcePath();
 
         if (checkOnly) {
@@ -573,8 +567,16 @@ public class Main {
           // no dead code, etc.
           // No need to check interfaces or .meta files (no code in
           // those cases)
-          if (!node.isFromMetaFile() && !(node.getType() instanceof InterfaceType))
-            optimizeTAC(new TACBuilder().build(node), reporter);
+          if (!node.isFromMetaFile()) {
+            if (!(node.getType() instanceof InterfaceType))
+              optimizeTAC(new TACBuilder().build(node), reporter);
+
+            // As an optimization, print .meta files for the .shadow files being checked
+            // Attributes never generate .meta files because their original .shadow files are
+            // interpreted
+            if (reporter.getErrorList().isEmpty())
+              TypeChecker.printMetaFile(node);
+          }
         } else {
           Path path = BaseChecker.stripExtension(file);
           Path name = path.getFileName();
@@ -608,8 +610,11 @@ public class Main {
             else logger.info("Generating object code for " + name);
             // Gets top level class
             TACModule module = optimizeTAC(new TACBuilder().build(node), reporter);
-            if (reporter.getErrorList().isEmpty())
+            if (reporter.getErrorList().isEmpty()) {
+              if (!node.isFromMetaFile())
+                TypeChecker.printMetaFile(node);
               linkCommand.add(compileShadowFile(file, binaryPath, module, instantiatedGenerics));
+            }
           }
 
           if (Files.exists(nativeFile))
