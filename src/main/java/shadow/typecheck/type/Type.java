@@ -50,6 +50,8 @@ public abstract class Type implements Comparable<Type> {
   private final TypeArgumentCache instantiatedTypes = new TypeArgumentCache();
   private final Map<String, ImportInformation> importedItems = new HashMap<>();
 
+  private final Set<Type> instantiatedGenerics = new HashSet<>();
+
   private String hashName = null;
 
   /*
@@ -320,6 +322,19 @@ public abstract class Type implements Comparable<Type> {
   public Type getTypeWithoutTypeArguments() {
     return typeWithoutTypeArguments;
   }
+
+  public Set<Type> getInstantiatedGenerics() {
+    return instantiatedGenerics;
+  }
+
+  public void addInstantiatedGeneric(Type type) {
+    instantiatedGenerics.add(type);
+  }
+
+  public void addAllInstantiatedGenerics(Set<Type> otherGenerics) {
+    instantiatedGenerics.addAll(otherGenerics);
+  }
+
 
   public Type getInstantiation(
       Type type, List<ModifiedType> values, List<ModifiedType> replacements)
@@ -1362,6 +1377,7 @@ public abstract class Type implements Comparable<Type> {
     return true;
   }
 
+  /*
   public Set<Type> getInstantiatedGenerics() {
     Set<Type> genericClasses = new HashSet<>();
     TreeSet<Type> startingClasses = new TreeSet<>(getUsedTypes());
@@ -1402,6 +1418,8 @@ public abstract class Type implements Comparable<Type> {
 
     return genericClasses;
   }
+  */
+
 
   public void addUsedType(Type type) {
     if (type == null || type instanceof UninstantiatedType) return;

@@ -590,7 +590,7 @@ public class ClassType extends Type {
 
     if (!hasOuter()) {
       Set<Type> genericTypes = getInstantiatedGenerics();
-      if (genericTypes.size() > 0) {
+      if (!genericTypes.isEmpty()) {
         out.println();
         first = true;
         for (Type type : genericTypes) {

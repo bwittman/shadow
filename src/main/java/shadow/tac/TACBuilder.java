@@ -108,8 +108,10 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
     ShadowParser.ClassOrInterfaceBodyContext body = ctx.classOrInterfaceBody();
     for (ShadowParser.ClassOrInterfaceBodyDeclarationContext declaration :
         body.classOrInterfaceBodyDeclaration()) {
-      if (declaration.classOrInterfaceDeclaration() != null)
-        build(declaration.classOrInterfaceDeclaration());
+        if (declaration.classOrInterfaceDeclaration() != null) {
+          TACModule innerModule = build(declaration.classOrInterfaceDeclaration());
+          type.addAllInstantiatedGenerics(innerModule.getType().getInstantiatedGenerics());
+        }
     }
 
     return null; // no children
@@ -1816,7 +1818,7 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
 
   @Override
   public Void visitWhileStatement(ShadowParser.WhileStatementContext ctx) {
-    block = new TACBlock(anchor, block).addBreak().addContinue();
+    block = new TACBlock(anchor, moduleStack.peek(), block).addBreak().addContinue();
     visitChildren(ctx);
 
     TACLabel bodyLabel = new TACLabel(method),
@@ -1842,7 +1844,7 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
 
   @Override
   public Void visitDoStatement(ShadowParser.DoStatementContext ctx) {
-    block = new TACBlock(anchor, block).addBreak().addContinue();
+    block = new TACBlock(anchor, moduleStack.peek(), block).addBreak().addContinue();
     visitChildren(ctx);
 
     TACLabel bodyLabel = new TACLabel(method),
@@ -1870,7 +1872,7 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
 
   @Override
   public Void visitForeachStatement(ShadowParser.ForeachStatementContext ctx) {
-    block = new TACBlock(anchor, block).addBreak().addContinue();
+    block = new TACBlock(anchor, moduleStack.peek(), block).addBreak().addContinue();
     method.enterScope(); // needed because a variable is declared in a foreach
     visitChildren(ctx);
 
@@ -1986,7 +1988,7 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
 
   @Override
   public Void visitForStatement(ShadowParser.ForStatementContext ctx) {
-    block = new TACBlock(anchor, block).addBreak().addContinue();
+    block = new TACBlock(anchor, moduleStack.peek(), block).addBreak().addContinue();
     method.enterScope(); // needed because a variable can be declared in a for
     visitChildren(ctx);
 
@@ -2179,10 +2181,10 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
    */
   @Override
   public Void visitFinallyStatement(ShadowParser.FinallyStatementContext ctx) {
-    block = new TACBlock(anchor, block).addDone();
+    block = new TACBlock(anchor, moduleStack.peek(), block).addDone();
 
     if (ctx.block() != null) { // Has a finally block
-      block = new TACBlock(anchor, block).addCleanup();
+      block = new TACBlock(anchor, moduleStack.peek(), block).addCleanup();
       TACBlock tryBlock = block;
       visit(ctx.catchStatements());
       block = block.getParent();
@@ -2196,7 +2198,7 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
        * Example: A try block only contains a throw statement.
        * Only the unwind copy of the finally will be reachable.
        */
-      block = new TACBlock(anchor, block);
+      block = new TACBlock(anchor, moduleStack.peek(), block);
       TACBlock cleanupBlock = block;
       TACFinallyFunction function = visitFinallyFunction(ctx.block());
       block = block.getParent();
@@ -2270,7 +2272,7 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
 
   @Override
   public Void visitCatchStatements(ShadowParser.CatchStatementsContext ctx) {
-    block = new TACBlock(anchor, block);
+    block = new TACBlock(anchor, moduleStack.peek(), block);
     TACBlock tryBlock = block;
 
     /*
@@ -2534,7 +2536,7 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
 
   private TACLabel setupMethod() {
     // Outermost block (contains cleanup for GC purposes)
-    block = new TACBlock(method).addCleanup().addDone();
+    block = new TACBlock(method, moduleStack.peek()).addCleanup().addDone();
     anchor = new TACDummyNode(null, block);
 
     TACLabel methodBody = new TACLabel(method);
@@ -3090,7 +3092,7 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
     TACFinallyFunction function = method.new TACFinallyFunction(block.getFinallyFunction());
 
     TACBlock saveBlock = block;
-    block = new TACBlock(method);
+    block = new TACBlock(method, moduleStack.peek());
     block.setFinallyFunction(function);
     anchor = new TACDummyNode(null, block);
 

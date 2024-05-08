@@ -3441,7 +3441,7 @@ public class StatementChecker extends ScopedChecker {
     Type type = declaration.getType();
 
     for (ReferenceTypeContext child : ctx.referenceType())
-      type.addUsedType(child.getType());
+      type.addInstantiatedGeneric(child.getType());
 
     return null;
   }

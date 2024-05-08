@@ -26,6 +26,8 @@ public class TACBlock {
   private TACLabel cleanupUnwindLabel; // Label for the cleanup done when unwinding
 
   private final TACMethod method;
+
+  private final TACModule module;
   private boolean unwindTarget =
       false; // Used to see if the block can be reached by unwinding, important for finally
   // code-generation
@@ -34,18 +36,19 @@ public class TACBlock {
   private TACFinallyFunction finallyFunction = null;
   private TACLandingPad landingPad;
 
-  public TACBlock(TACMethod method) {
-    this(method, null);
+  public TACBlock(TACMethod method, TACModule module) {
+    this(method, module, null);
   }
 
-  public TACBlock(TACNode node, TACBlock parentBlock) {
-    this(node.getMethod(), parentBlock);
+  public TACBlock(TACNode node, TACModule module, TACBlock parentBlock) {
+    this(node.getMethod(), module, parentBlock);
     node.setBlock(this);
   }
 
-  private TACBlock(TACMethod method, TACBlock parentBlock) {
+  private TACBlock(TACMethod method, TACModule module, TACBlock parentBlock) {
     parent = parentBlock;
     this.method = method;
+    this.module = module;
   }
 
   public TACMethod getMethod() {
@@ -224,5 +227,9 @@ public class TACBlock {
     }
 
     return null;
+  }
+
+  public TACModule getModule() {
+    return module;
   }
 }

@@ -4,6 +4,7 @@ import shadow.ShadowException;
 import shadow.interpreter.ShadowInteger;
 import shadow.output.llvm.IrOutput;
 import shadow.tac.TACMethod;
+import shadow.tac.TACModule;
 import shadow.tac.TACVariable;
 import shadow.tac.TACVisitor;
 import shadow.typecheck.type.*;
@@ -113,6 +114,7 @@ public class TACClass extends TACOperand {
 
   public TACClass(TACNode node, Type classType) {
     super(node);
+
     type = classType;
     TACMethod method = getMethod();
     if (type instanceof TypeParameter) {
@@ -163,11 +165,19 @@ public class TACClass extends TACOperand {
       if (signature.isWrapper()) signature = signature.getWrapped();
       Type outer = signature.getOuter();
 
+      boolean fullyInstantiated = type.isFullyInstantiated();
+      if (fullyInstantiated)
+        node.getBlock().getModule().getType().addInstantiatedGeneric(type);
+      else if(type instanceof ArrayType arrayType) {
+        if(!arrayType.containsUnboundTypeParameters())
+          node.getBlock().getModule().getType().addInstantiatedGeneric(arrayType.convertToGeneric());
+      }
+
       if ((!type.isParameterized() && !(type instanceof ArrayType))
           || // non-generics
           (type instanceof ArrayType && !((ArrayType) type).containsUnboundTypeParameters())
           || // fully instantiated arrays
-          type.isFullyInstantiated()) { // fully parameterized generics
+          fullyInstantiated) { // fully parameterized generics
         classData = new TACClassData(this);
         canPropagate = true; // basically a literal, other classes require loads
       } else if (type.equals(outer)) { // just get the current class!

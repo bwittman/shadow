@@ -32,6 +32,7 @@ public class TACModule {
   private final List<TACMethod> methods = new ArrayList<>();
   private final List<TACModule> innerClasses = new ArrayList<>();
 
+
   public TACModule(Type moduleType) {
     type = moduleType;
   }
