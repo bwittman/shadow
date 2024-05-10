@@ -48,8 +48,8 @@ target triple = "x86_64-pc-windows-msvc"
 @shadow.standard..Exception.class = external constant %shadow.standard..Class
 @shadow.standard..OutOfMemoryException.class = external constant %shadow.standard..Class
 @shadow.standard..OutOfMemoryException._methods = external constant %shadow.standard..OutOfMemoryException._methods
-@ubyte._A.class = external constant %shadow.standard..GenericClass
-@shadow.standard..String._A.class = external constant %shadow.standard..GenericClass
+@shadow.standard..Array_L_shadow.standard..ubyte_R.class = external constant %shadow.standard..GenericClass
+@shadow.standard..Array_L_shadow.standard..String_R.class = external constant %shadow.standard..GenericClass
 
 %shadow.io..Console._methods = type opaque
 @shadow.io..Console._methods = external constant %shadow.io..Console._methods
@@ -95,7 +95,7 @@ _start:
     store %shadow.io..Console* %console, %shadow.io..Console** @shadow.io..Console.singleton
 	%countInt = sub i32 %argc, 1	
 	%count = zext %int %countInt to %long
-	%array = call %shadow.standard..Array* @__allocateArray(%shadow.standard..GenericClass* @shadow.standard..String._A.class, %long %count, %boolean false)
+	%array = call %shadow.standard..Array* @__allocateArray(%shadow.standard..GenericClass* @shadow.standard..Array_L_shadow.standard..String_R.class, %long %count, %boolean false)
 	%stringRef = getelementptr %shadow.standard..Array, %shadow.standard..Array* %array, i32 1
 	%stringArray = bitcast %shadow.standard..Array* %stringRef to %shadow.standard..String**
 	br label %_loopTest
@@ -103,7 +103,7 @@ _loopBody:
 	%allocatedString = call %shadow.standard..Object* @__allocate(%shadow.standard..Class* @shadow.standard..String.class, %shadow.standard..Object._methods* bitcast(%shadow.standard..String._methods* @shadow.standard..String._methods to %shadow.standard..Object._methods*))	
 	%length = call %size_t @strlen(i8* nocapture %nextArg)	
 	%longLength = ptrtoint %size_t %length to %ulong
-	%allocatedArray = call %shadow.standard..Array* @__allocateArray(%shadow.standard..GenericClass* @ubyte._A.class, %long %longLength, %boolean false)	
+	%allocatedArray = call %shadow.standard..Array* @__allocateArray(%shadow.standard..GenericClass* @shadow.standard..Array_L_shadow.standard..ubyte_R.class, %long %longLength, %boolean false)	
 	%byteArray = getelementptr %shadow.standard..Array, %shadow.standard..Array* %allocatedArray, i32 1
 	%bytes = bitcast %shadow.standard..Array* %byteArray to i8*
 	call i8* @strncpy(i8* %bytes, i8* nocapture %nextArg, %size_t %length)	

@@ -83,6 +83,25 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
     Type type = ctx.getType();
     TACModule newModule = new TACModule(type);
 
+    // Add generic parent
+    if (type instanceof ClassType classType) {
+      Type parent = classType.getExtendType();
+      if (parent != null && parent.isFullyInstantiated())
+        type.addInstantiatedGeneric(parent);
+    }
+
+    // Add generic interfaces
+    for (InterfaceType interfaceType : type.getAllInterfaces()) {
+      if (interfaceType.isFullyInstantiated())
+        type.addInstantiatedGeneric(interfaceType);
+    }
+
+    // Interface data uses an array of classes and an array of method tables
+    // String data uses an array of ubytes
+    type.addInstantiatedGeneric(new ArrayType(Type.CLASS).convertToGeneric());
+    type.addInstantiatedGeneric(new ArrayType(Type.METHOD_TABLE).convertToGeneric());
+    type.addInstantiatedGeneric(new ArrayType(Type.UBYTE).convertToGeneric());
+
     if (!moduleStack.isEmpty()) moduleStack.peek().addInnerClass(newModule);
     moduleStack.push(newModule);
 
@@ -113,6 +132,8 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
           type.addAllInstantiatedGenerics(innerModule.getType().getInstantiatedGenerics());
         }
     }
+
+
 
     return null; // no children
   }
