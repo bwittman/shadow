@@ -595,6 +595,8 @@ public class Main {
           // If the LLVM IR bitcode or compiled object code didn't exist, the full .shadow file would
           // have been used (except for attributes, which are always interpreted)
           if (node.isFromMetaFile()) {
+            instantiatedGenerics.addAll(node.getType().getInstantiatedGenerics());
+
             if (node.getType() instanceof AttributeType)
               logger.info("Interpreting Shadow for " + name);
             else {

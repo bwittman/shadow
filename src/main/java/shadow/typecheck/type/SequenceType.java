@@ -128,14 +128,14 @@ public class SequenceType extends Type implements Iterable<ModifiedType>, List<M
         // Raw primitive types get a . before them, to avoid collisions
         Type baseType = type;
         if (type instanceof ArrayType) baseType = ((ArrayType) type).recursivelyGetBaseType();
-        if (baseType.isPrimitive() && !modifiers.isNullable() && (options & TYPE_PARAMETERS) == 0) builder.append(".");
+        if (baseType.isPrimitive() && !modifiers.isNullable() /*&& (options & TYPE_PARAMETERS) == 0*/) builder.append(".");
         else builder.append("_");
       } else if (first) first = false;
       else builder.append(",");
 
       if ((options & MANGLE) != 0) {
         // Raw primitive types (non-nullable and not used as a type parameter)
-        if (type.isPrimitive() && !modifiers.isNullable() && (options & TYPE_PARAMETERS) == 0) builder.append(type.getTypeName());
+        if (type.isPrimitive() && !modifiers.isNullable() /*&& (options & TYPE_PARAMETERS) == 0*/) builder.append(type.getTypeName());
         else builder.append(type.toString(options));
       } else if (type != null) {
         // Do this?

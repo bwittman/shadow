@@ -3,6 +3,7 @@ package shadow.test.output;
 import com.sun.jna.platform.win32.WinReg;
 import org.junit.jupiter.api.*;
 import shadow.*;
+import shadow.typecheck.type.Type;
 
 import java.io.*;
 import java.nio.file.Files;

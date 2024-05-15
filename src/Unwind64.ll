@@ -45,7 +45,7 @@
 @shadow.standard..Exception.class = external constant %shadow.standard..Class
 @shadow.standard..OutOfMemoryException.class = external constant %shadow.standard..Class
 @shadow.standard..OutOfMemoryException._methods = external constant %shadow.standard..OutOfMemoryException._methods
-@ubyte._A.class = external constant %shadow.standard..Class ; Actually GenericClass, but this keeps LLVM happy
+@shadow.standard..Array_L.ubyte_R.class = external constant %shadow.standard..Class ; Actually GenericClass, but this keeps LLVM happy
 
 @shadow.standard..Array._methods = external constant %shadow.standard..Array._methods
 ; ArrayNullable methods aren't the same as regular Array methods, but it keeps LLVM happy to pretend that they are
@@ -615,6 +615,6 @@ entry:
 	ret %shadow.standard..Exception* %4
 }
 
-@_array0 = private unnamed_addr constant {%ulong, %shadow.standard..Class*, %shadow.standard..Array._methods*, %long, [20 x %ubyte]} {%ulong -1, %shadow.standard..Class* @ubyte._A.class, %shadow.standard..Array._methods* @shadow.standard..Array._methods, %long 20, [20 x %ubyte] c"Heap space exhausted"}
+@_array0 = private unnamed_addr constant {%ulong, %shadow.standard..Class*, %shadow.standard..Array._methods*, %long, [20 x %ubyte]} {%ulong -1, %shadow.standard..Class* @shadow.standard..Array_L.ubyte_R.class, %shadow.standard..Array._methods* @shadow.standard..Array._methods, %long 20, [20 x %ubyte] c"Heap space exhausted"}
 @_string0 = private unnamed_addr constant %shadow.standard..String { %ulong -1, %shadow.standard..Class* @shadow.standard..String.class, %shadow.standard..String._methods* @shadow.standard..String._methods, %shadow.standard..Array* bitcast ( {%ulong, %shadow.standard..Class*, %shadow.standard..Array._methods*, %long, [20 x %ubyte]}* @_array0 to %shadow.standard..Array*), %boolean true }
 @_OutOfMemoryException = private constant %shadow.standard..OutOfMemoryException { %ulong -1, %shadow.standard..Class* @shadow.standard..OutOfMemoryException.class, %shadow.standard..OutOfMemoryException._methods* @shadow.standard..OutOfMemoryException._methods, %shadow.standard..String* @_string0 }

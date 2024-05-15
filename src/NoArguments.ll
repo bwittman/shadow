@@ -45,8 +45,6 @@
 @shadow.standard..Exception.class = external constant %shadow.standard..Class
 @shadow.standard..OutOfMemoryException.class = external constant %shadow.standard..Class
 @shadow.standard..OutOfMemoryException._methods = external constant %shadow.standard..OutOfMemoryException._methods
-@ubyte._A.class = external constant %shadow.standard..GenericClass
-@shadow.standard..String._A.class = external constant %shadow.standard..GenericClass
 
 %shadow.io..Console._methods = type opaque
 @shadow.io..Console._methods = external constant %shadow.io..Console._methods

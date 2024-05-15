@@ -94,6 +94,8 @@ public class IrOutput extends AbstractOutput {
 
     Type moduleType = module.getType();
 
+    writer.write();
+    writer.write("; Used types");
     // type references for regular types
     HashSet<Type> definedGenerics = new HashSet<>();
     for (Type type : moduleType.getUsedTypes()) {
@@ -670,6 +672,12 @@ public class IrOutput extends AbstractOutput {
           typeArguments.add(typeParameter);
       }
 
+      // Though not technically a type argument, the interface classes must be known as well
+      for (InterfaceType interfaceType : type.getInterfaces()) {
+        if (!interfaceType.isParameterized())
+          typeArguments.add(interfaceType);
+      }
+
       /*
       Type uninstantiatedType = type.getTypeWithoutTypeArguments();
       if (usedGenerics.add(uninstantiatedType) ) {
@@ -781,7 +789,7 @@ public class IrOutput extends AbstractOutput {
     writeStringLiterals();
   }
 
-  private void writeGenericClasses(Set<Type> definedGenerics) throws ShadowException {
+  private void recordGenericClasses(Set<Type> definedGenerics) throws ShadowException {
 
     Set<Type> genericClasses = module.getType().getInstantiatedGenerics();
 
@@ -902,12 +910,18 @@ public class IrOutput extends AbstractOutput {
 
     if (module.getType() instanceof AttributeType) return;
 
+
     // Write all regular types including (non-generic) class objects and method tables
     Set<Type> definedGenerics = writeUsedTypes();
 
-    // Write generic and array classes
-    writeGenericClasses(definedGenerics);
+    writer.write();
+    writer.write("; Recording generic types");
+    // Record generic and array classes for later use
+    recordGenericClasses(definedGenerics);
 
+
+    writer.write();
+    writer.write("; Mentioned types");
     // Write types that are mentioned but whose internals are never used, allowing them to be
     // written as opaque
     writeMentionedTypes(definedGenerics);

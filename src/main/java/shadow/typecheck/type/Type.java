@@ -1430,12 +1430,12 @@ public abstract class Type implements Comparable<Type> {
       } else if (type instanceof ArrayType arrayType) {
         Type baseType = arrayType.getBaseType();
 
-        usedTypes.add(type);
+        //usedTypes.add(type);
 
         // Covers Type.ARRAY and all recursive base types
         // automatically does the right thing for NullableArray
         // must do before adding to usedTypes
-        addUsedType(arrayType.convertToGeneric());
+        //addUsedType(arrayType.convertToGeneric());
 
         addUsedType(baseType);
       } else if (type instanceof MethodReferenceType)

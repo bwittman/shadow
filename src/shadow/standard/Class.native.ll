@@ -64,7 +64,7 @@ declare void @shadow.standard..Object..destroy(%shadow.standard..Object*)
 ;declare %shadow.io..Console* @shadow.io..Console..printLine(%shadow.io..Console*) 
 ;declare %shadow.io..Console* @shadow.io..Console..debugPrint.int(%shadow.io..Console*, %int)
 ;declare void @shadow.io..Console..debugPrint_shadow.standard..String(%shadow.io..Console*, %shadow.standard..String*)
-;@ubyte._A.class = external constant %shadow.standard..GenericClass
+@shadow.standard..Array_L.ubyte_R.class = external constant %shadow.standard..GenericClass
 ;@shadow.standard..Array._methods = external constant %shadow.standard..Array._methods
 
 define %int @shadow.standard..Class..pointerSize(%shadow.standard..Class*) alwaysinline nounwind readnone {
