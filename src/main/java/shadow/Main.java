@@ -772,11 +772,27 @@ public class Main {
    */
   public static TACModule optimizeTAC(TACModule module, ErrorReporter reporter) {
 
-    if (!(module.getType() instanceof InterfaceType)) {
-      List<TACModule> innerClasses = module.getAllInnerClasses();
-      List<TACModule> modules = new ArrayList<>(innerClasses.size() + 1);
+    /*
+     for (ShadowParser.ClassOrInterfaceBodyDeclarationContext declaration :
+            body.classOrInterfaceBodyDeclaration()) {
+      if (declaration.classOrInterfaceDeclaration() != null) {
+        ctx.getType().addAllInstantiatedGenerics(declaration.getType().getInstantiatedGenerics());
+      }
+    }
+     */
+
+    // Add all instantiated generics from inner classes.
+    // Since this happens first, we're sure we have the complete list when meta files are written.
+    List<TACModule> innerModules = module.getAllInnerClasses();
+    Type moduleType = module.getType();
+    for (TACModule innerModule : innerModules)
+      moduleType.addAllInstantiatedGenerics(innerModule.getType().getInstantiatedGenerics());
+
+    if (!(moduleType instanceof InterfaceType)) {
+
+      List<TACModule> modules = new ArrayList<>(innerModules.size() + 1);
       modules.add(module);
-      modules.addAll(innerClasses);
+      modules.addAll(innerModules);
 
       List<ControlFlowGraph> graphs = module.optimizeTAC(reporter);
 

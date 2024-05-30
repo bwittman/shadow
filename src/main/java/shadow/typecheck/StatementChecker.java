@@ -24,6 +24,7 @@ import shadow.parse.Context;
 import shadow.parse.Context.AssignmentKind;
 import shadow.parse.ShadowParser;
 import shadow.parse.ShadowParser.*;
+import shadow.tac.TACModule;
 import shadow.typecheck.TypeCheckException.Error;
 import shadow.typecheck.type.InstantiationException;
 import shadow.typecheck.type.*;
@@ -2986,7 +2987,6 @@ public class StatementChecker extends ScopedChecker {
   public Void visitPrimitiveType(ShadowParser.PrimitiveTypeContext ctx) {
     // no children
     ctx.setType(nameToPrimitiveType(ctx.getText()));
-    currentType.addUsedType(ctx.getType());
     ctx.addModifiers(Modifiers.TYPE_NAME);
 
     return null;
@@ -3161,6 +3161,8 @@ public class StatementChecker extends ScopedChecker {
     }
 
     ctx.setType(type);
+
+    // currentType is null when in generic type lists
     currentType.addUsedType(type);
 
     return null;
@@ -3433,12 +3435,9 @@ public class StatementChecker extends ScopedChecker {
   public Void visitGenericTypeList(GenericTypeListContext ctx) {
     visitChildren(ctx);
 
-    // Get type for top-level declaration
-    CompilationUnitContext compilationUnit = (CompilationUnitContext) ctx.getParent();
-    Context declaration = compilationUnit.classOrInterfaceDeclaration();
-    if (declaration == null)
-      declaration = compilationUnit.enumDeclaration();
-    Type type = declaration.getType();
+    // Get type of parent (either ClassOrInterfaceDeclarationContext or EnumDeclarationContext)
+    Context parent = (Context) ctx.getParent().getParent();
+    Type type = parent.getType();
 
     for (ReferenceTypeContext child : ctx.referenceType())
       type.addInstantiatedGeneric(child.getType());

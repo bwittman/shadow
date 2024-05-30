@@ -98,6 +98,7 @@ public class IrOutput extends AbstractOutput {
     writer.write("; Used types");
     // type references for regular types
     HashSet<Type> definedGenerics = new HashSet<>();
+    Set<Type> usedTypes = moduleType.getUsedTypes();
     for (Type type : moduleType.getUsedTypes()) {
       if (!type.isParameterized()
           && !(type instanceof ArrayType)
@@ -668,7 +669,7 @@ public class IrOutput extends AbstractOutput {
 
       for (ModifiedType parameter : type.getTypeParameters()) {
         Type typeParameter = parameter.getType();
-        if (!typeParameter.isParameterized())
+        if (!typeParameter.isParameterized() && !(typeParameter instanceof ArrayType))
           typeArguments.add(typeParameter);
       }
 
@@ -758,8 +759,6 @@ public class IrOutput extends AbstractOutput {
     writer.write();
     writer.write("; Type arguments");
     for(Type type : typeArguments) {
-      // writeTypeDeclaration(type);
-      // writeMethodTableDeclaration(type);
       if (type instanceof ClassType)
         writer.write(methodTable(type) + " = external constant %" + raw(Type.METHOD_TABLE));
       writer.write(classOf(type) + " = external constant %" + raw(Type.CLASS));
@@ -2953,7 +2952,7 @@ public class IrOutput extends AbstractOutput {
     String interfaces;
     int flags = GENERIC;
 
-    if (generic instanceof InterfaceType) {
+    if (genericAsObject instanceof InterfaceType) {
       flags |= INTERFACE;
       interfaceData = interfaces = " zeroinitializer, ";
     } else {
@@ -2984,7 +2983,7 @@ public class IrOutput extends AbstractOutput {
               + " x "
               + type(Type.CLASS)
               + "]}* "
-              + genericInterfaces(generic)
+              + genericInterfaces(genericAsObject)
               + " to "
               + type(Type.ARRAY)
               + "), ";
@@ -3012,11 +3011,13 @@ public class IrOutput extends AbstractOutput {
     }
 
     String name;
+
+
     // As an optimization for arrays, store no name, since the full name can be retrieved from base class
-    if (generic instanceof ArrayType) {
-      name = ((ArrayType) generic).isNullable() ? "nullable " : "";
+    if (noArguments == Type.ARRAY || noArguments == Type.ARRAY_NULLABLE) {
+      name = noArguments == Type.ARRAY_NULLABLE ? "nullable " : "";
       flags |= ARRAY;
-    } else name = generic.toString(Type.PACKAGES);
+    } else name = genericAsObject.toString(Type.PACKAGES);
 
     writer.write(
         classOf(generic)

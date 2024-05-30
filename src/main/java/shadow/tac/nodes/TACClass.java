@@ -165,13 +165,17 @@ public class TACClass extends TACOperand {
       if (signature.isWrapper()) signature = signature.getWrapped();
       Type outer = signature.getOuter();
 
+
       boolean fullyInstantiated = type.isFullyInstantiated();
+       /*
       if (fullyInstantiated)
         node.getBlock().getModule().getType().addInstantiatedGeneric(type);
       else if(type instanceof ArrayType arrayType) {
         if(!arrayType.containsUnboundTypeParameters())
           node.getBlock().getModule().getType().addInstantiatedGeneric(arrayType.convertToGeneric());
       }
+
+       */
 
       if ((!type.isParameterized() && !(type instanceof ArrayType))
           || // non-generics

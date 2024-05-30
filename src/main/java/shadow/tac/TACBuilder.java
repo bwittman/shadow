@@ -76,6 +76,21 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
     else return type;
   }
 
+
+  /*
+  private void recursivelyAddGeneric(Type type, Type generic) {
+    if (generic != null && generic.isFullyInstantiated()) {
+      if (type.addInstantiatedGeneric(generic)) {
+        if (generic instanceof ClassType classType)
+          recursivelyAddGeneric(type, classType.getExtendType());
+
+
+      }
+    }
+  }
+
+   */
+
   @SuppressWarnings("ConstantConditions")
   @Override
   public Void visitClassOrInterfaceDeclaration(
@@ -83,12 +98,10 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
     Type type = ctx.getType();
     TACModule newModule = new TACModule(type);
 
+    /*
     // Add generic parent
-    if (type instanceof ClassType classType) {
-      Type parent = classType.getExtendType();
-      if (parent != null && parent.isFullyInstantiated())
-        type.addInstantiatedGeneric(parent);
-    }
+    if (type instanceof ClassType classType)
+      recursivelyAddGeneric(type, classType.getExtendType());
 
     // Add generic interfaces
     for (InterfaceType interfaceType : type.getAllInterfaces()) {
@@ -96,11 +109,14 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
         type.addInstantiatedGeneric(interfaceType);
     }
 
+
     // Interface data uses an array of classes and an array of method tables
     // String data uses an array of ubytes
     type.addInstantiatedGeneric(new ArrayType(Type.CLASS).convertToGeneric());
     type.addInstantiatedGeneric(new ArrayType(Type.METHOD_TABLE).convertToGeneric());
     type.addInstantiatedGeneric(new ArrayType(Type.UBYTE).convertToGeneric());
+
+     */
 
     if (!moduleStack.isEmpty()) moduleStack.peek().addInnerClass(newModule);
     moduleStack.push(newModule);
@@ -123,13 +139,15 @@ public class TACBuilder extends ShadowBaseVisitor<Void> {
 
     for (MethodSignature method : type.orderMethods()) visitMethod(method);
 
+
+
     // tree saved by visitor
     ShadowParser.ClassOrInterfaceBodyContext body = ctx.classOrInterfaceBody();
     for (ShadowParser.ClassOrInterfaceBodyDeclarationContext declaration :
         body.classOrInterfaceBodyDeclaration()) {
         if (declaration.classOrInterfaceDeclaration() != null) {
           TACModule innerModule = build(declaration.classOrInterfaceDeclaration());
-          type.addAllInstantiatedGenerics(innerModule.getType().getInstantiatedGenerics());
+          //type.addAllInstantiatedGenerics(innerModule.getType().getInstantiatedGenerics());
         }
     }
 

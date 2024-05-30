@@ -201,47 +201,9 @@ public abstract class Type implements Comparable<Type> {
       return coreTypes;
   }
 
-  /*
-   * The following types must be added because they can appear in
-   * generated code without appearing inside the Shadow source at all.
-   *
-   * DANGER: Do not call this method before type collection has been done;
-   * otherwise, some of these values will be null.
-   */
-  public static List<Type> getGenericSupportingTypes() {
-    if (genericSupportingTypes == null) {
-      genericSupportingTypes = Collections.unmodifiableList(Arrays.asList(
-              Type.OBJECT,
-              // Address map for deep copies
-              Type.ADDRESS_MAP,
-              // Class management
-              Type.CLASS,
-              Type.GENERIC_CLASS,
-              // Array wrapper classes
-              Type.ARRAY,
-              Type.ARRAY_NULLABLE,
-              // String
-              Type.STRING,
-              // Add all primitive types (since their Object versions might be used in casts)
-              Type.BOOLEAN,
-              Type.BYTE,
-              Type.CODE,
-              Type.DOUBLE,
-              Type.FLOAT,
-              Type.INT,
-              Type.LONG,
-              Type.SHORT,
-              Type.UBYTE,
-              Type.UINT,
-              Type.ULONG,
-              Type.USHORT
-      ));
-    }
-    return genericSupportingTypes;
-  }
+
 
   private static List<Type> coreTypes = null;
-  private static List<Type> genericSupportingTypes = null;
 
   private static class TypeArgumentCache {
     public ModifiedType argument;
@@ -327,8 +289,8 @@ public abstract class Type implements Comparable<Type> {
     return instantiatedGenerics;
   }
 
-  public void addInstantiatedGeneric(Type type) {
-    instantiatedGenerics.add(type);
+  public boolean addInstantiatedGeneric(Type type) {
+    return instantiatedGenerics.add(type);
   }
 
   public void addAllInstantiatedGenerics(Set<Type> otherGenerics) {
@@ -460,6 +422,8 @@ public abstract class Type implements Comparable<Type> {
     exceptionType = null;
 
     AttributeType.clearTypes();
+
+    coreTypes = null;
   }
 
   /*
@@ -1428,16 +1392,16 @@ public abstract class Type implements Comparable<Type> {
       if (type instanceof TypeParameter typeParameter) {
         for (Type bound : typeParameter.getBounds()) addUsedType(bound);
       } else if (type instanceof ArrayType arrayType) {
-        Type baseType = arrayType.getBaseType();
+        //Type baseType = arrayType.getBaseType();
 
         //usedTypes.add(type);
 
         // Covers Type.ARRAY and all recursive base types
         // automatically does the right thing for NullableArray
         // must do before adding to usedTypes
-        //addUsedType(arrayType.convertToGeneric());
+        addUsedType(arrayType.convertToGeneric());
 
-        addUsedType(baseType);
+        //addUsedType(baseType);
       } else if (type instanceof MethodReferenceType)
         addUsedType(((MethodReferenceType) type).getMethodType());
       else if (type instanceof MethodType methodType) {
@@ -1454,10 +1418,16 @@ public abstract class Type implements Comparable<Type> {
           for (ModifiedType typeParameter : type.getTypeParameters()) {
             Type parameterType = typeParameter.getType();
             addUsedType(parameterType);
+            /*
             if ((parameterType instanceof ArrayType)
                 && (parameterType.isFullyInstantiated() || !parameterType.isParameterized()))
               usedTypes.add(typeParameter.getType()); // directly add array type parameter
+
+             */
           }
+
+          if (type.isFullyInstantiated())
+            instantiatedGenerics.add(type);
         }
 
         // Interface classes are often needed "invisibly" in order to perform casts

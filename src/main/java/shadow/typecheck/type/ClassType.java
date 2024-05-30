@@ -504,7 +504,7 @@ public class ClassType extends Type {
     // interfaces implemented
     List<InterfaceType> interfaces = getInterfaces();
     boolean first = true;
-    if (interfaces.size() > 0) {
+    if (!interfaces.isEmpty()) {
       if (isStarted) first = false;
       else out.print(" is ");
       for (InterfaceType _interface : interfaces) {
@@ -543,8 +543,7 @@ public class ClassType extends Type {
     }
     if (newLine) out.println();
 
-    // now all fields have to be around, just so that generics can figure out how big they need to
-    // be
+    // now all fields have to be around, just so that generics can figure out how big they need to be
     // necessary?  perhaps code can be written to compute the size
     // TODO: try to take this back to constants only
     newLine = false;
@@ -581,12 +580,12 @@ public class ClassType extends Type {
         }
       }
 
-    if (newLine && getInnerTypes().size() > 0) out.println();
+    if (newLine && !getInnerTypes().isEmpty()) out.println();
 
     // Inner types
     for (Type _class : getInnerTypes().values()) _class.printMetaFile(out, indent);
 
-    out.println(linePrefix + "}");
+
 
     if (!hasOuter()) {
       Set<Type> genericTypes = getInstantiatedGenerics();
@@ -602,10 +601,12 @@ public class ClassType extends Type {
           if(type instanceof ArrayType arrayType)
             type = arrayType.convertToGeneric();
 
-          out.print(type.toString(PACKAGES | TYPE_PARAMETERS));
+          out.print(indent + type.toString(PACKAGES | TYPE_PARAMETERS));
         }
         out.println(";");
       }
     }
+
+    out.println(linePrefix + "}");
   }
 }

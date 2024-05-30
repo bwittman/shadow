@@ -1337,4 +1337,9 @@ public class TypeCollector extends ScopedChecker {
 
     return null;
   }
+
+  @Override
+  public Void visitGenericTypeList(GenericTypeListContext ctx) {
+    return null;
+  }
 }

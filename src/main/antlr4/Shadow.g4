@@ -35,7 +35,7 @@ import shadow.typecheck.type.Type;
 options {contextSuperClass=shadow.parse.Context;}
 
 compilationUnit	
-    :   importDeclaration* modifiers (classOrInterfaceDeclaration | enumDeclaration ) genericTypeList? EOF
+    :   importDeclaration* modifiers (classOrInterfaceDeclaration | enumDeclaration )  EOF
     ;
     
 importDeclaration
@@ -86,6 +86,8 @@ enumBody
    '{'
 		enumConstant (',' enumConstant)*
    		( ';' classOrInterfaceBodyDeclaration* )?
+
+   		genericTypeList?
    '}'
 	;
 	
@@ -113,6 +115,8 @@ classOrInterfaceBody
 	:
   	'{'
   		classOrInterfaceBodyDeclaration*
+
+  		genericTypeList?
   	'}'
 	;	
 

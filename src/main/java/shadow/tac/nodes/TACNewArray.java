@@ -22,6 +22,12 @@ public class TACNewArray extends TACOperand {
   public TACNewArray(TACNode node, ArrayType arrayType, TACOperand class_, TACOperand size) {
     super(node);
     type = arrayType;
+
+    /*
+    boolean fullyInstantiated = arrayType.isFullyInstantiated();
+    if (fullyInstantiated)
+      node.getBlock().getModule().getType().addInstantiatedGeneric(arrayType.convertToGeneric());
+     */
     if (arrayType.isNullable()) getModifiers().addModifier(Modifiers.NULLABLE);
     this.class_ = check(class_, new SimpleModifiedType(Type.GENERIC_CLASS));
     this.size = check(size, new SimpleModifiedType(Type.LONG));
