@@ -2779,7 +2779,7 @@ public class IrOutput extends AbstractOutput {
   }
 
   private void declareGenericClass(Type generic) throws ShadowException {
-    writer.write(classOf(generic) + " = external global " + type(Type.GENERIC_CLASS));
+    writer.write(classOf(generic) + " = external global %" + raw(Type.GENERIC_CLASS));
   }
 
   private void writeGenericClass(Type generic) throws ShadowException {
