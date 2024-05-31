@@ -282,10 +282,10 @@ public class Main {
         output.close();
 
         // Debugging stuff
-        Path temporaryGenericsLL = parent.resolve("genericsInsanity.ll");
-        PrintWriter writer = new PrintWriter(temporaryGenericsLL.toFile());
-        writer.print(stream);
-        writer.close();
+//        Path temporaryGenericsLL = parent.resolve("genericsInsanity.ll");
+//        PrintWriter writer = new PrintWriter(temporaryGenericsLL.toFile());
+//        writer.print(stream);
+//        writer.close();
 
         Path temporaryGenerics = Files.createTempFile(parent, "generics", ".o");
 

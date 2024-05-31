@@ -41,7 +41,7 @@ public class OutputTests {
     else if (os.contains("mac")) args.add("mac.json");
     else args.add("linux.json");
 
-    args.add("-r");
+    //args.add("-r");
     //args.add("-f");
     // args.add("-v");
   }

@@ -98,7 +98,6 @@ public class IrOutput extends AbstractOutput {
     writer.write("; Used types");
     // type references for regular types
     HashSet<Type> definedGenerics = new HashSet<>();
-    Set<Type> usedTypes = moduleType.getUsedTypes();
     for (Type type : moduleType.getUsedTypes()) {
       if (!type.isParameterized()
           && !(type instanceof ArrayType)
@@ -169,15 +168,6 @@ public class IrOutput extends AbstractOutput {
       }
     }
   }
-
-  private void writeMethodTableDeclaration(Type type) throws ShadowException {
-    if (type instanceof ClassType) {
-      if (type.isUninstantiated()) {
-        writer.write(methodTableType(type, false) + " = type opaque");
-      }
-    }
-  }
-
 
   /* This method is similar to the writeTypeDefinition() method below, but it
    * treats all objects like Type.OBJECT and all interfaces like a
@@ -589,21 +579,14 @@ public class IrOutput extends AbstractOutput {
     }
   }
 
-  private static boolean addReferencedType(Set<Type> referencedTypes, Type type) {
-    // Ignore if parameterized (because we only need unparameterized types)
-    // Ignore if an array for the same reasons (arrays are essentially generic types)
-    if (!type.isParameterized() && !(type instanceof ArrayType))
-      return referencedTypes.add(type);
-    return false;
-  }
-
   /*
    * The generic class file contains:
    * 1) Primitive types (as usual)
-   * 2) Full definitions for GenericClass, String, and Array types
-   * 3) External class constants for any (non-generic) type arguments
-   * 4) Partial definitions for generics with type arguments removed
-   * 5) Class constants for generics
+   * 2) Full type definitions for GenericClass and String
+   * 3) Simplified type definitions of AddressMap, Class, MethodTable, Object, and ulong
+   * 4) External class constants for any (non-generic) type arguments (and interfaces)
+   * 5) Simplified type definitions for generics with type arguments removed
+   * 6) Class constants for generics
    */
   public void writeGenericClassFile() throws ShadowException {
     Set<Type> generics = new HashSet<>(instantiatedGenerics);
@@ -633,27 +616,19 @@ public class IrOutput extends AbstractOutput {
 
     } while(generics.size() != updatedGenerics.size());
 
+    // 1) Primitive types (as usual)
     writePrimitiveTypes();
 
     Set<Type> typeArguments = new HashSet<>();
 
-    // For generic class internals, all we really need are the following, NOT core types:
+    // 2) Full type definitions for GenericClass and String
     Set<Type> mainTypes = new HashSet<>(Arrays.asList(Type.GENERIC_CLASS, Type.STRING));
     for (Type type : mainTypes) {
       writeTypeDefinition(type);
       typeArguments.add(type);
     }
 
-    /*
-    Set<Type> mainGenerics = new HashSet<>(Arrays.asList(Type.ARRAY, Type.ITERATOR));
-    for (Type type : mainGenerics) {
-      writeTypeDefinition(type);
-      writeGenericInterfaceDataReference(type);
-    }
-
-     */
-
-    // There are a few more types that we need but don't need to see the real internals of:
+    // 3) Simplified type definitions of AddressMap, Class, MethodTable, Object, and ulong
     Set<Type> extraTypes = new HashSet<>(Arrays.asList(Type.ADDRESS_MAP, Type.METHOD_TABLE, Type.ULONG, Type.OBJECT, Type.CLASS));
     for (Type type : extraTypes) {
       writeSimpleTypeDefinition(type);
@@ -661,8 +636,6 @@ public class IrOutput extends AbstractOutput {
     }
 
     Set<Type> usedGenerics = new HashSet<>(Arrays.asList(Type.ARRAY, Type.ITERATOR));
-    Set<Type> unparameterizedGenerics = new HashSet<>();
-
     for (Type type : generics) {
       Type unparameterized = type.getTypeWithoutTypeArguments();
       usedGenerics.add(unparameterized);
@@ -678,108 +651,31 @@ public class IrOutput extends AbstractOutput {
         if (!interfaceType.isParameterized())
           typeArguments.add(interfaceType);
       }
-
-      /*
-      Type uninstantiatedType = type.getTypeWithoutTypeArguments();
-      if (usedGenerics.add(uninstantiatedType) ) {
-        if (uninstantiatedType instanceof ClassType classType)
-          for (ModifiedType modifiedType : classType.getAllFields())
-            addReferencedType(referencedTypes, modifiedType.getType());
-      */
-        /*
-        for (MethodSignature signature : uninstantiatedType.orderAllMethods()) {
-          for(ModifiedType modifiedType : signature.getParameterTypes())
-            addReferencedType(referencedTypes, modifiedType.getType());
-          for(ModifiedType modifiedType : signature.getReturnTypes())
-            addReferencedType(referencedTypes, modifiedType.getType());
-        }
-         */
-
-  /*
-      if (type instanceof ArrayType arrayType)
-        type = arrayType.convertToGeneric();
-
-
-      for (ModifiedType parameter : type.getTypeParameters())
-          addReferencedType(referencedTypes, parameter.getType());
-
-       */
-
-
-
     }
 
-
-    /*
-    List<Type> supportingTypes = Type.getGenericSupportingTypes();
-    writer.write("; Supporting class objects");
-    for(Type type : supportingTypes)
-      writer.write(classOf(type) + " = external constant %" + raw(Type.CLASS));
-
-    // Always needed
-    usedTypes.addAll(supportingTypes);
-*/
-
-    /*
-    writer.write("; Core types");
-    List<Type> coreTypes = Type.getCoreTypes();
-    for(Type coreType : coreTypes) {
-      if(coreType instanceof ArrayType arrayType)
-        coreType = arrayType.convertToGeneric();
-
-      if (coreType.isFullyInstantiated()) instantiatedGenerics.add(coreType);
-      else {
-        writeTypeDefinition(coreType, false, false);
-        writer.write(methodTable(coreType) + " = external constant %" + raw(Type.METHOD_TABLE));
-        usedGenerics.remove(coreType);
-      }
-      referencedTypes.remove(coreType);
-    }
-
-
-     */
-
-
-    /*
-
-
-    // Writing an unparameterized generic removes all type parameters
-    // and writes a definition and interface information
-    writer.write("; Unparameterized generics");
-    for (Type type : usedGenerics) {
-      //writeUnparameterizedGeneric
-      writeUnparameterizedGenericDeclaration(type, unparameterizedGenerics);
-      referencedTypes.remove(type);
-    }
-
-     */
-
-
-
-    writer.write();
-    writer.write("; Type arguments");
+    //writer.write();
+    //writer.write("; Type arguments");
+    // 4) External class constants for any (non-generic) type arguments (and interfaces)
     for(Type type : typeArguments) {
       if (type instanceof ClassType)
         writer.write(methodTable(type) + " = external constant %" + raw(Type.METHOD_TABLE));
       writer.write(classOf(type) + " = external constant %" + raw(Type.CLASS));
     }
 
-    writer.write();
-    writer.write("; Unparameterized generics");
-    // 4) Partial definitions for generics with type arguments removed
+    //writer.write();
+    //writer.write("; Unparameterized generics");
+    // 5) Simplified type definitions for generics with type arguments removed
     for(Type type : usedGenerics) {
-        //writeUnparameterizedGeneric(type, false);
-
         writeSimpleTypeDefinition(type);
         writeGenericInterfaceDataReference(type);
     }
 
-    // 5) Class constants for generics
+    // 6) Class constants for generics
     // This is the point of this method.
     // All the previous content is supporting material so that none of these
     // reference a type that doesn't exist.
-    writer.write();
-    writer.write("; Fully parameterized generics");
+    //writer.write();
+    //writer.write("; Fully parameterized generics");
     for (Type type : generics) {
       writeGenericClassSupportingMaterial(type);
       writeGenericClass(type);
@@ -789,7 +685,6 @@ public class IrOutput extends AbstractOutput {
   }
 
   private void recordGenericClasses(Set<Type> definedGenerics) throws ShadowException {
-
     Set<Type> genericClasses = module.getType().getInstantiatedGenerics();
 
     if (definedGenerics.add(Type.ARRAY)) {
@@ -797,12 +692,10 @@ public class IrOutput extends AbstractOutput {
       writeGenericInterfaceDataReference(Type.ARRAY);
     }
 
-
     if(definedGenerics.add(Type.ARRAY_NULLABLE)) {
       writeTypeDefinition(Type.ARRAY_NULLABLE);
       writeGenericInterfaceDataReference(Type.ARRAY_NULLABLE);
     }
-
 
     for (Type type : genericClasses) {
       instantiatedGenerics.add(type);
@@ -816,9 +709,6 @@ public class IrOutput extends AbstractOutput {
           writeGenericInterfaceDataReference(type);
         }
       }
-
-      //writeGenericClassSupportingMaterial(type); // junk that all generic classes need
-      //writeGenericClass(type);
     }
 
     writer.write();
@@ -855,49 +745,6 @@ public class IrOutput extends AbstractOutput {
             writer.write(methodTable(type) + " = external constant " + methodTableType(type, false));
           else
             writer.write(methodTable(type) + " = external constant %" + raw(Type.METHOD_TABLE));
-        }
-      }
-    }
-  }
-
-  /*
-  private void writeUnparameterizedGeneric(Type type, boolean useRealMethodTableType)
-      throws ShadowException {
-
-    writeTypeDefinition(type, !(type instanceof ArrayType), useRealMethodTableType);
-
-  }
-
-   */
-
-  private void writeUnparameterizedGenericDeclaration(Type type, Set<Type> unparameterizedGenerics)
-          throws ShadowException {
-    Type unparameterizedType = type.getTypeWithoutTypeArguments();
-
-    if (unparameterizedGenerics.add(unparameterizedType)) {
-      writeSimpleTypeDefinition(unparameterizedType);
-
-      // module can be null for file that declares all parameterized generics
-      if (module == null || !module.getType().encloses(unparameterizedType)) {
-        if (unparameterizedType instanceof ClassType) {
-          writer.write(
-                  interfaceData(unparameterizedType)
-                          + " = external constant { %ulong, "
-                          + type(Type.GENERIC_CLASS)
-                          + ", "
-                          + methodTableType(Type.ARRAY)
-                          + ", %long, ["
-                          + unparameterizedType.getAllInterfaces().size()
-                          + " x "
-                          + type(Type.METHOD_TABLE)
-                          + "]}");
-
-          if (!(unparameterizedType instanceof ArrayType))
-            writer.write(
-                    methodTable(unparameterizedType)
-                            + " = external constant %"
-                           // + methodTableType(unparameterizedType, false));
-                            + raw(Type.METHOD_TABLE));
         }
       }
     }
@@ -2936,11 +2783,6 @@ public class IrOutput extends AbstractOutput {
   }
 
   private void writeGenericClass(Type generic) throws ShadowException {
-
-    // This comdat stuff is supposed to allow generic classes to be defined in multiple files and
-    // merged at link time
-    //writer.write("$" + withGenerics(generic, ".class") + " = comdat any");
-
     Type genericAsObject;
 
     if (generic instanceof ArrayType) genericAsObject = ((ArrayType) generic).convertToGeneric();
@@ -3022,7 +2864,6 @@ public class IrOutput extends AbstractOutput {
     writer.write(
         classOf(generic)
             + " = unnamed_addr constant %"
-            //    + " = linkonce  constant  %"
             + raw(Type.GENERIC_CLASS)
             + " { "
             + type(Type.ULONG)
@@ -3033,8 +2874,7 @@ public class IrOutput extends AbstractOutput {
             typeText(Type.CLASS, classOf(Type.GENERIC_CLASS))
             + ", "
             + // class
-            //methodTableType(Type.GENERIC_CLASS)
-                type(Type.METHOD_TABLE)
+            type(Type.METHOD_TABLE)
             + " "
             + methodTable(Type.GENERIC_CLASS)
             + ", "
@@ -3059,8 +2899,7 @@ public class IrOutput extends AbstractOutput {
             + " bitcast ( { %ulong, "
             + type(Type.GENERIC_CLASS)
             + ", "
-            + //methodTableType(Type.ARRAY)
-                type(Type.METHOD_TABLE)
+            + type(Type.METHOD_TABLE)
             + ", %long, ["
             + classListSize
             + " x "
@@ -3076,8 +2915,7 @@ public class IrOutput extends AbstractOutput {
             + " bitcast ( { %ulong, "
             + type(Type.GENERIC_CLASS)
             + ", "
-            + //methodTableType(Type.ARRAY)
-                type(Type.METHOD_TABLE)
+            + type(Type.METHOD_TABLE)
             + ", %long, ["
             + parameterList.size()
             + " x "
@@ -3087,8 +2925,7 @@ public class IrOutput extends AbstractOutput {
             + generic.toString(Type.MANGLE | Type.TYPE_PARAMETERS)
             + " to "
             + type(Type.ARRAY)
-                + ")}"); // tables
-            //+ ")}, comdat"); // tables
+            + ")}"); // tables
   }
 
   private void writeGenericClassSupportingMaterial(Type generic) throws ShadowException {
@@ -3130,20 +2967,15 @@ public class IrOutput extends AbstractOutput {
         else sb.append(typeText(Type.CLASS, classOf(_interface)));
       }
 
-      //sb.append("]}, comdat");
       sb.append("]}");
 
-
-      //writer.write(
-          //"$_interfaces" + generic.toString(Type.MANGLE | Type.TYPE_PARAMETERS) + " = comdat any");
       writer.write(
           genericInterfaces(generic)
               //+ " = linkonce_odr unnamed_addr constant {%ulong, "
                   + " = linkonce constant {%ulong, "
               + type(Type.GENERIC_CLASS)
               + ", "
-              + //methodTableType(Type.ARRAY)
-                  type(Type.METHOD_TABLE)
+              + type(Type.METHOD_TABLE)
               + ", "
               + type(Type.LONG)
               + ", ["
@@ -3170,8 +3002,7 @@ public class IrOutput extends AbstractOutput {
             "{ %ulong -1, "
                 + typeText(Type.GENERIC_CLASS, classOf(new ArrayType(Type.CLASS)))
                 + ", "
-                + //methodTableType(Type.ARRAY)
-                    type(Type.METHOD_TABLE)
+                + type(Type.METHOD_TABLE)
                 + " "
                 + methodTable(Type.ARRAY)
                 + ", "
@@ -3186,8 +3017,7 @@ public class IrOutput extends AbstractOutput {
             "{ %ulong -1, "
                 + typeText(Type.GENERIC_CLASS, classOf(new ArrayType(Type.METHOD_TABLE)))
                 + ", "
-                + //methodTableType(Type.ARRAY)
-                    type(Type.METHOD_TABLE)
+                + type(Type.METHOD_TABLE)
                 + " "
                 + methodTable(Type.ARRAY)
                 + ", "
@@ -3209,7 +3039,7 @@ public class IrOutput extends AbstractOutput {
         tables.append(", ");
       }
 
-      // handle classes
+      // Handle classes
       parameters.append(type(Type.CLASS)).append(" ");
       if (parameterType.isFullyInstantiated() || parameterType instanceof ArrayType)
         parameters
@@ -3222,7 +3052,7 @@ public class IrOutput extends AbstractOutput {
             .append(")");
       else parameters.append(classOf(parameterType));
 
-      // handle corresponding method tables
+      // Handle corresponding method tables
       if (parameterType instanceof InterfaceType)
         tables.append(type(Type.METHOD_TABLE)).append(" null"); // no method table for interfaces
       else
@@ -3232,21 +3062,11 @@ public class IrOutput extends AbstractOutput {
             .append(methodTable(parameterWithoutArguments));
     }
 
-    // handle extra class dependencies
-
+    // Handle extra class dependencies
     if (genericAsObject instanceof ClassType classType) {
       if (classType.hasDependencyList())
         for (ModifiedType parameter : classType.getDependencyList()) {
           Type parameterType = parameter.getType();
-
-          // arrays are in their "generic" form and should be turned back
-          //TODO: Is this true? Shouldn't we keep them generic?
-          /*
-          if (parameterType.getTypeWithoutTypeArguments().equals(Type.ARRAY))
-            parameterType = new ArrayType(parameterType.getTypeParameters().getType(0));
-          else if (parameterType.getTypeWithoutTypeArguments().equals(Type.ARRAY_NULLABLE))
-            parameterType = new ArrayType(parameterType.getTypeParameters().getType(0), true);
-           */
 
           parameters.append(", ");
           parameters.append(type(Type.CLASS)).append(" ");
@@ -3263,24 +3083,18 @@ public class IrOutput extends AbstractOutput {
         }
     }
 
-    //parameters.append("]}, comdat");
     parameters.append("]}");
-    //tables.append("]}, comdat");
     tables.append("]}");
 
-    // This comdat stuff is supposed to allow generic classes to be defined in multiple files and
-    // merged at link time
+
     String mangledGeneric = generic.toString(Type.MANGLE | Type.TYPE_PARAMETERS);
-    //writer.write("$_parameters" + mangledGeneric + " = comdat any");
     writer.write(
         "@_parameters"
             + mangledGeneric
-            //+ " = linkonce_odr unnamed_addr constant { %ulong, "
-                + " = linkonce  constant { %ulong, "
+            + " = linkonce  constant { %ulong, "
             + type(Type.GENERIC_CLASS)
             + ", "
-            + //methodTableType(Type.ARRAY)
-                type(Type.METHOD_TABLE)
+            + type(Type.METHOD_TABLE)
             + ", %long, ["
             + classListSize
             + " x "
@@ -3288,16 +3102,13 @@ public class IrOutput extends AbstractOutput {
             + "] } "
             + parameters);
 
-    //writer.write("$_tables" + mangledGeneric + " = comdat any");
     writer.write(
         "@_tables"
             + mangledGeneric
-            //+ " = linkonce_odr unnamed_addr constant { %ulong, "
-                + " = linkonce  constant { %ulong, "
+            + " = linkonce  constant { %ulong, "
             + type(Type.GENERIC_CLASS)
             + ", "
-            + //methodTableType(Type.ARRAY)
-                type(Type.METHOD_TABLE)
+            + type(Type.METHOD_TABLE)
             + ", %long, ["
             + parameterList.size()
             + " x "
